@@ -36,3 +36,4 @@ export const COMMUNES = [
   "Treichville",
   "Yopougon",
 ] as const;
+export const METIERS = CATEGORIES_DJASSA;
