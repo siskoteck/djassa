@@ -4,16 +4,25 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+const ADMIN_EMAIL = (
+  process.env.NEXT_PUBLIC_ADMIN_EMAIL || "siskoteck@gmail.com"
+).toLowerCase();
+
 export function NavbarDjassa() {
   const [connecte, setConnecte] = useState(false);
+  const [estAdmin, setEstAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setConnecte(Boolean(data.session?.user));
+      const user = data.session?.user;
+      setConnecte(Boolean(user));
+      setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setConnecte(Boolean(session?.user));
+      const user = session?.user;
+      setConnecte(Boolean(user));
+      setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL);
     });
 
     return () => {
@@ -37,12 +46,21 @@ export function NavbarDjassa() {
           <Link href="/" className="hover:text-emerald-600 transition">
             Accueil
           </Link>
-          <Link href="/annonces" className="hover:text-emerald-600 transition">
-            Toutes les annonces
+          <Link href="/publier" className="hover:text-emerald-600 transition">
+            Publier
           </Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
+          {estAdmin && (
+            <Link
+              href="/admin"
+              className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-extrabold px-3.5 py-2.5 rounded-xl transition"
+            >
+              ⚙️ Admin
+            </Link>
+          )}
+
           <Link
             href="/publier"
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm"
