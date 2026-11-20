@@ -29,20 +29,33 @@ interface VendeurAdmin {
   commune: string | null;
   verifie: boolean;
 }
+
+interface MessageContactAdmin {
+  id: string;
+  created_at: string;
+  nom: string;
+  telephone: string | null;
+  email: string | null;
+  sujet: string;
+  message: string;
+  lu: boolean;
+}
+
 export default function AdminDjassaPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [onglet, setOnglet] = useState<"annonces" | "vendeurs">("annonces");
+  const [onglet, setOnglet] = useState<"annonces" | "vendeurs" | "messages">(
+    "annonces"
+  );
 
   const [annonces, setAnnonces] = useState<AnnonceAdmin[]>([]);
   const [vendeurs, setVendeurs] = useState<VendeurAdmin[]>([]);
+  const [messages, setMessages] = useState<MessageContactAdmin[]>([]);
   const [recherche, setRecherche] = useState("");
 
-  // Changement de mot de passe admin
   const [nouveauMdp, setNouveauMdp] = useState("");
   const [msgMdp, setMsgMdp] = useState("");
-
   useEffect(() => {
     async function chargerAdmin() {
       const { data } = await supabase.auth.getSession();
@@ -55,7 +68,7 @@ export default function AdminDjassaPage() {
 
       setAutorise(true);
 
-      const [resAnn, resVend] = await Promise.all([
+      const [resAnn, resVend, resMsg] = await Promise.all([
         supabase
           .from("annonces")
           .select("id, created_at, titre, prix, commune, telephone, statut, booste")
@@ -64,10 +77,15 @@ export default function AdminDjassaPage() {
           .from("utilisateurs")
           .select("id, created_at, nom, email, telephone, commune, verifie")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("messages_contact")
+          .select("*")
+          .order("created_at", { ascending: false }),
       ]);
 
       if (resAnn.data) setAnnonces(resAnn.data as AnnonceAdmin[]);
       if (resVend.data) setVendeurs(resVend.data as VendeurAdmin[]);
+      if (resMsg.data) setMessages(resMsg.data as MessageContactAdmin[]);
       setLoading(false);
     }
 
@@ -110,6 +128,42 @@ export default function AdminDjassaPage() {
     }
   }
 
+  async function toggleMessageLu(id: string, luActuel: boolean) {
+    const nouveauLu = !luActuel;
+    const { error } = await supabase
+      .from("messages_contact")
+      .update({ lu: nouveauLu })
+      .eq("id", id);
+
+    if (!error) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, lu: nouveauLu } : m))
+      );
+    }
+  }
+
+  async function supprimerMessage(id: string) {
+    if (!confirm("Supprimer ce message ?")) return;
+    const { error } = await supabase
+      .from("messages_contact")
+      .delete()
+      .eq("id", id);
+    if (!error) {
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    }
+  }
+
+  function lienWhatsAppReponse(tel: string | null, nomClient: string) {
+    let chiffres = (tel || "").replace(/\D/g, "");
+    if (chiffres.length === 10 && chiffres.startsWith("0")) {
+      chiffres = "225" + chiffres;
+    }
+    const texte = encodeURIComponent(
+      `Bonjour ${nomClient}, ici l'équipe DJASSA Abidjan suite à votre message.`
+    );
+    return `https://wa.me{chiffres}?text=${texte}`;
+  }
+
   async function handleChangerMdp(e: React.FormEvent) {
     e.preventDefault();
     setMsgMdp("");
@@ -143,6 +197,8 @@ export default function AdminDjassaPage() {
     );
   });
 
+  const nbMessagesNonLus = messages.filter((m) => !m.lu).length;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div>
@@ -155,7 +211,7 @@ export default function AdminDjassaPage() {
       </div>
 
       {/* Compteurs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">
             Total Annonces
@@ -167,7 +223,7 @@ export default function AdminDjassaPage() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">
-            Annonces à la une (Boostées)
+            Annonces à la une
           </p>
           <p className="text-3xl font-black text-amber-600 mt-1">
             {annonces.filter((a) => a.booste).length}
@@ -182,10 +238,19 @@ export default function AdminDjassaPage() {
             {vendeurs.length}
           </p>
         </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 uppercase">
+            Messages reçus ({nbMessagesNonLus} non lu{nbMessagesNonLus > 1 ? "s" : ""})
+          </p>
+          <p className="text-3xl font-black text-emerald-700 mt-1">
+            {messages.length}
+          </p>
+        </div>
       </div>
 
       {/* Onglets */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setOnglet("annonces")}
@@ -208,6 +273,23 @@ export default function AdminDjassaPage() {
           }`}
         >
           👥 Vendeurs ({vendeurs.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setOnglet("messages")}
+          className={`px-4 py-2.5 rounded-xl text-sm font-bold transition ${
+            onglet === "messages"
+              ? "bg-emerald-600 text-white"
+              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          📩 Messages ({messages.length})
+          {nbMessagesNonLus > 0 && (
+            <span className="ml-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+              {nbMessagesNonLus}
+            </span>
+          )}
         </button>
       </div>
 
@@ -321,12 +403,93 @@ export default function AdminDjassaPage() {
         </div>
       )}
 
+      {onglet === "messages" && (
+        <div className="space-y-4">
+          {messages.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-sm text-gray-500">
+              Aucun message reçu depuis la page Contact pour le moment.
+            </div>
+          ) : (
+            messages.map((m) => (
+              <div
+                key={m.id}
+                className={`rounded-2xl border p-5 shadow-sm transition ${
+                  m.lu
+                    ? "bg-white border-gray-200"
+                    : "bg-emerald-50/60 border-emerald-300"
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      {!m.lu && (
+                        <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                          NOUVEAU
+                        </span>
+                      )}
+                      <span className="text-xs font-bold bg-gray-100 text-gray-800 px-2.5 py-0.5 rounded-full">
+                        {m.sujet}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(m.created_at).toLocaleString("fr-FR")}
+                      </span>
+                    </div>
+
+                    <h3 className="font-extrabold text-gray-900 text-base mt-2">
+                      {m.nom}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      📞 {m.telephone || "Non renseigné"}
+                      {m.email ? ` • ✉️ ${m.email}` : ""}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {m.telephone && (
+                      <a
+                        href={lienWhatsAppReponse(m.telephone, m.nom)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
+                      >
+                        💬 Répondre WhatsApp
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleMessageLu(m.id, m.lu)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition"
+                    >
+                      {m.lu ? "Marquer non lu" : "✓ Marquer lu"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => supprimerMessage(m.id)}
+                      className="text-xs font-bold text-red-600 px-3 py-1.5 rounded-xl hover:bg-red-50 transition"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-800 mt-3 pt-3 border-t border-gray-200/70 whitespace-pre-line">
+                  {m.message}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* Changement de mot de passe administrateur */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm max-w-xl">
         <h2 className="text-base font-extrabold text-gray-900 mb-2">
           🔐 Sécurité du compte administrateur
         </h2>
-        <form onSubmit={handleChangerMdp} className="flex flex-col sm:flex-row gap-3">
+        <form
+          onSubmit={handleChangerMdp}
+          className="flex flex-col sm:flex-row gap-3"
+        >
           <input
             type="password"
             minLength={6}
