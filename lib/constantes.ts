@@ -15,6 +15,8 @@ export const COMMUNES_ABIDJAN = [
   "Hors Abidjan (Intérieur)",
 ];
 
+export const COMMUNES = COMMUNES_ABIDJAN;
+
 export const ETATS_ARTICLE = [
   "Neuf (jamais utilisé)",
   "Comme neuf",
