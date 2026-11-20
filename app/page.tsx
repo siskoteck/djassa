@@ -74,8 +74,8 @@ export default function HomeDjassaPage() {
   }
   return (
     <div>
-      {/* Bannière principale + Barre de recherche */}
-      <section className="bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 text-white py-12 px-4">
+      {/* Bannière principale verte + Barre de recherche */}
+      <section className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white py-12 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <span className="inline-block bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full mb-3">
             🇨🇮 LE GRAND MARCHÉ EN LIGNE D&apos;ABIDJAN
@@ -83,7 +83,7 @@ export default function HomeDjassaPage() {
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
             Achetez et vendez près de chez vous sur DJASSA
           </h1>
-          <p className="text-orange-50 text-sm sm:text-base mt-3 max-w-2xl mx-auto">
+          <p className="text-emerald-50 text-sm sm:text-base mt-3 max-w-2xl mx-auto">
             Téléphones, voitures, meubles, vêtements ou logements à Treichville,
             Cocody, Yopougon, Marcory et partout à Abidjan.
           </p>
@@ -95,7 +95,7 @@ export default function HomeDjassaPage() {
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
               placeholder="Que cherchez-vous ? (iPhone, frigo, studio...)"
-              className="sm:col-span-2 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500"
+              className="sm:col-span-2 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
             />
 
             <select
@@ -135,7 +135,7 @@ export default function HomeDjassaPage() {
             <button
               type="button"
               onClick={() => setCategorieId("Toutes")}
-              className="text-xs font-bold text-orange-600 hover:underline"
+              className="text-xs font-bold text-emerald-700 hover:underline"
             >
               Voir toutes les catégories
             </button>
@@ -154,8 +154,8 @@ export default function HomeDjassaPage() {
                 }
                 className={`p-3.5 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
                   estActive
-                    ? "bg-orange-600 text-white border-orange-600 shadow-sm"
-                    : "bg-white hover:border-orange-400 text-gray-800 border-gray-200"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                    : "bg-white hover:border-emerald-400 text-gray-800 border-gray-200"
                 }`}
               >
                 <span className="text-2xl">{cat.icone || "🛍️"}</span>
@@ -175,7 +175,7 @@ export default function HomeDjassaPage() {
           </h2>
           <Link
             href="/publier"
-            className="text-xs sm:text-sm font-bold text-orange-600 hover:underline"
+            className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
           >
             + Déposer une annonce
           </Link>
@@ -195,7 +195,7 @@ export default function HomeDjassaPage() {
             </p>
             <Link
               href="/publier"
-              className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition"
+              className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition"
             >
               + Publier ma première annonce gratuite
             </Link>
@@ -206,13 +206,13 @@ export default function HomeDjassaPage() {
               <Link
                 key={annonce.id}
                 href={`/annonces/${annonce.id}`}
-                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-orange-300 transition flex flex-col"
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-emerald-400 transition flex flex-col"
               >
                 <div className="h-48 bg-gray-100 relative">
                   {Array.isArray(annonce.photos) && annonce.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(annonce.photos)}
+                      src={String(annonce.photos[0])}
                       alt={annonce.titre}
                       className="w-full h-full object-cover"
                     />
@@ -228,7 +228,7 @@ export default function HomeDjassaPage() {
 
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <p className="text-orange-600 font-black text-lg">
+                    <p className="text-emerald-700 font-black text-lg">
                       {formaterPrixFCFA(annonce.prix)}
                     </p>
                     <h3 className="font-bold text-gray-900 text-sm mt-1 line-clamp-2">

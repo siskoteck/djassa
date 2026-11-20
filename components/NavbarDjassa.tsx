@@ -25,19 +25,19 @@ export function NavbarDjassa() {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="text-2xl font-black tracking-tight text-orange-600">
+          <span className="text-2xl font-black tracking-tight text-emerald-600">
             DJASSA
           </span>
-          <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
             Abidjan
           </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-700">
-          <Link href="/" className="hover:text-orange-600 transition">
+          <Link href="/" className="hover:text-emerald-600 transition">
             Accueil
           </Link>
-          <Link href="/annonces" className="hover:text-orange-600 transition">
+          <Link href="/annonces" className="hover:text-emerald-600 transition">
             Toutes les annonces
           </Link>
         </nav>
@@ -45,7 +45,7 @@ export function NavbarDjassa() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/publier"
-            className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm"
           >
             + Vendre un article
           </Link>
