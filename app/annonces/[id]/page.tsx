@@ -4,11 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { basculerFavoriId, obtenirFavorisIds } from "@/lib/favoris";
 
 interface AnnonceDetail {
   id: string;
   created_at: string;
   user_id: string;
+  categorie_id: number | null;
   titre: string;
   description: string | null;
   prix: number;
@@ -30,25 +32,39 @@ interface VendeurInfo {
   created_at?: string;
 }
 
+interface AnnonceSimilaire {
+  id: string;
+  titre: string;
+  prix: number;
+  etat: string;
+  commune: string;
+  quartier: string | null;
+  photos: string[];
+}
+
 function ContenuDetailAnnonce() {
   const params = useParams();
   const rawId = params?.id;
   const id = decodeURIComponent(
-    String(Array.isArray(rawId) ? rawId[0] : rawId ?? "")
+    String(Array.isArray(rawId) ? rawId : rawId ?? "")
   );
 
   const [annonce, setAnnonce] = useState<AnnonceDetail | null>(null);
   const [vendeur, setVendeur] = useState<VendeurInfo | null>(null);
+  const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
   const [photoActive, setPhotoActive] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [copieLien, setCopieLien] = useState(false);
-
+  const [estFavori, setEstFavori] = useState(false);
+  const [signale, setSignale] = useState(false);
   useEffect(() => {
     async function chargerAnnonce() {
       if (!id || id === "undefined" || id === "null") {
         setLoading(false);
         return;
       }
+
+      setEstFavori(obtenirFavorisIds().includes(id));
 
       const { data, error } = await supabase
         .from("annonces")
@@ -60,16 +76,49 @@ function ContenuDetailAnnonce() {
         const detail = data as AnnonceDetail;
         setAnnonce(detail);
 
-        if (detail.user_id) {
-          const { data: profilVendeur } = await supabase
-            .from("utilisateurs")
-            .select("nom, verifie, created_at")
-            .eq("id", detail.user_id)
-            .maybeSingle();
+        // Chargement parallèle du vendeur et des annonces similaires
+        const promesseVendeur = detail.user_id
+          ? supabase
+              .from("utilisateurs")
+              .select("nom, verifie, created_at")
+              .eq("id", detail.user_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null });
 
-          if (profilVendeur) {
-            setVendeur(profilVendeur as VendeurInfo);
-          }
+        const promesseSimilaires = supabase
+          .from("annonces")
+          .select("id, titre, prix, etat, commune, quartier, photos, categorie_id")
+          .eq("statut", "active")
+          .neq("id", detail.id)
+          .or(
+            detail.categorie_id
+              ? `categorie_id.eq.${detail.categorie_id},commune.eq.${detail.commune}`
+              : `commune.eq.${detail.commune}`
+          )
+          .order("created_at", { ascending: false })
+          .limit(8);
+
+        const [resVendeur, resSim] = await Promise.all([
+          promesseVendeur,
+          promesseSimilaires,
+        ]);
+
+        if (resVendeur.data) {
+          setVendeur(resVendeur.data as VendeurInfo);
+        }
+
+        if (resSim.data) {
+          // Prioriser celles qui ont la même catégorie ET la même commune
+          const triees = [...resSim.data].sort((a, b) => {
+            const scoreA =
+              (a.categorie_id === detail.categorie_id ? 2 : 0) +
+              (a.commune === detail.commune ? 1 : 0);
+            const scoreB =
+              (b.categorie_id === detail.categorie_id ? 2 : 0) +
+              (b.commune === detail.commune ? 1 : 0);
+            return scoreB - scoreA;
+          });
+          setSimilaires(triees.slice(0, 4) as AnnonceSimilaire[]);
         }
       }
 
@@ -78,6 +127,7 @@ function ContenuDetailAnnonce() {
 
     chargerAnnonce();
   }, [id]);
+
   function formaterPrixFCFA(prix: number) {
     if (!prix || prix <= 0) return "Prix à débattre";
     return prix.toLocaleString("fr-FR") + " FCFA";
@@ -106,6 +156,29 @@ function ContenuDetailAnnonce() {
     }
   }
 
+  function toggleFavori() {
+    if (!annonce) return;
+    const nouveaux = basculerFavoriId(annonce.id);
+    setEstFavori(nouveaux.includes(annonce.id));
+  }
+
+  async function signalerAnnonce() {
+    if (!annonce || signale) return;
+    const motif = prompt(
+      "Pourquoi signalez-vous cette annonce ? (Ex: Déjà vendue, arnaque, faux numéro...)"
+    );
+    if (!motif || !motif.trim()) return;
+
+    await supabase.from("messages_contact").insert([
+      {
+        nom: "Signalement Visiteur",
+        sujet: "Signaler une annonce",
+        message: `Annonce signalée : "${annonce.titre}" (ID: ${annonce.id})\nMotif : ${motif.trim()}`,
+      },
+    ]);
+    setSignale(true);
+    alert("Merci ! Votre signalement a été transmis à l'administrateur DJASSA.");
+  }
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">
@@ -124,8 +197,8 @@ function ContenuDetailAnnonce() {
           Cet article n&apos;est plus disponible sur DJASSA.
         </p>
         <Link
-          href="/"
-          className="inline-block bg-orange-600 text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-orange-700 transition"
+          href="/annonces"
+          className="inline-block bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-emerald-700 transition"
         >
           ← Retour aux bonnes affaires
         </Link>
@@ -134,39 +207,53 @@ function ContenuDetailAnnonce() {
   }
 
   const photos = Array.isArray(annonce.photos) ? annonce.photos : [];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <Link
-          href="/"
-          className="text-sm font-bold text-gray-600 hover:text-orange-600 transition"
+          href="/annonces"
+          className="text-sm font-bold text-gray-600 hover:text-emerald-700 transition"
         >
-          ← Retour aux annonces
+          ← Retour au catalogue
         </Link>
 
-        <button
-          type="button"
-          onClick={copierLienAnnonce}
-          className="text-xs font-bold bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-3.5 py-2 rounded-xl transition"
-        >
-          {copieLien ? "✅ Lien copié !" : "🔗 Partager l'annonce"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleFavori}
+            className={`text-xs font-bold border px-3.5 py-2 rounded-xl transition ${
+              estFavori
+                ? "bg-red-50 border-red-200 text-red-600"
+                : "bg-white border-gray-300 hover:bg-gray-50 text-gray-800"
+            }`}
+          >
+            {estFavori ? "❤️ Sauvegardé" : "🤍 Favoris"}
+          </button>
+
+          <button
+            type="button"
+            onClick={copierLienAnnonce}
+            className="text-xs font-bold bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-3.5 py-2 rounded-xl transition"
+          >
+            {copieLien ? "✅ Lien copié !" : "🔗 Partager"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Colonne Gauche : Galerie photos (7 colonnes) */}
         <div className="lg:col-span-7 space-y-3">
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm aspect-[4/3] relative flex items-center justify-center">
             {photos.length > 0 ? (
               <a
-                href={photos[photoActive] || photos[0]}
+                href={String(photos[photoActive] || photos)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-full block"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photos[photoActive] || photos[0]}
+                  src={String(photos[photoActive] || photos)}
                   alt={annonce.titre}
                   className="w-full h-full object-contain bg-gray-900"
                 />
@@ -184,7 +271,6 @@ function ContenuDetailAnnonce() {
             )}
           </div>
 
-          {/* Miniatures des photos (jusqu'à 8) */}
           {photos.length > 1 && (
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
               {photos.map((url, index) => (
@@ -194,7 +280,7 @@ function ContenuDetailAnnonce() {
                   onClick={() => setPhotoActive(index)}
                   className={`aspect-square rounded-xl overflow-hidden border-2 transition ${
                     photoActive === index
-                      ? "border-orange-600 ring-2 ring-orange-200"
+                      ? "border-emerald-600 ring-2 ring-emerald-200"
                       : "border-gray-200 opacity-75 hover:opacity-100"
                   }`}
                 >
@@ -209,7 +295,6 @@ function ContenuDetailAnnonce() {
             </div>
           )}
 
-          {/* Description détaillée (affichée sous les photos sur grand écran) */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm mt-6">
             <h2 className="text-lg font-extrabold text-gray-900 mb-3">
               Description de l&apos;article
@@ -220,12 +305,11 @@ function ContenuDetailAnnonce() {
             </p>
           </div>
         </div>
-        {/* Colonne Droite : Infos prix, vendeur & contact (5 colonnes) */}
         <div className="lg:col-span-5 space-y-5">
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               {annonce.categories && (
-                <span className="bg-orange-100 text-orange-800 text-xs font-extrabold px-3 py-1 rounded-full">
+                <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">
                   {annonce.categories.icone ? `${annonce.categories.icone} ` : ""}
                   {annonce.categories.nom}
                 </span>
@@ -239,7 +323,7 @@ function ContenuDetailAnnonce() {
               {annonce.titre}
             </h1>
 
-            <p className="text-3xl font-black text-orange-600 mt-3">
+            <p className="text-3xl font-black text-emerald-700 mt-3">
               {formaterPrixFCFA(annonce.prix)}
             </p>
 
@@ -258,14 +342,13 @@ function ContenuDetailAnnonce() {
               </p>
             </div>
 
-            {/* Boutons de contact direct */}
             {annonce.telephone && (
               <div className="mt-6 space-y-2.5">
                 <a
                   href={genererLienWhatsApp(annonce.telephone, annonce.titre)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-5 rounded-2xl text-sm flex items-center justify-center gap-2 transition shadow-sm"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-5 rounded-2xl text-sm flex items-center justify-center gap-2 transition shadow-sm"
                 >
                   <span>💬</span> Discuter sur WhatsApp
                 </a>
@@ -280,7 +363,6 @@ function ContenuDetailAnnonce() {
             )}
           </div>
 
-          {/* Carte Vendeur */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <p className="text-xs font-bold uppercase text-gray-400 mb-2">
               Informations vendeur
@@ -295,38 +377,120 @@ function ContenuDetailAnnonce() {
                 </p>
               </div>
               {vendeur?.verifie && (
-                <span className="bg-green-100 text-green-800 text-xs font-extrabold px-3 py-1 rounded-full">
+                <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">
                   ✓ Vendeur vérifié
                 </span>
               )}
             </div>
+
+            {annonce.user_id && (
+              <Link
+                href={`/boutique/${annonce.user_id}`}
+                className="mt-4 block w-full text-center border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 font-bold text-xs py-2.5 rounded-xl transition"
+              >
+                🏪 Voir toutes les annonces de ce vendeur →
+              </Link>
+            )}
           </div>
 
-          {/* Conseils anti-arnaque DJASSA */}
-          <div className="bg-amber-50 rounded-3xl border border-amber-200 p-5">
-            <h3 className="text-sm font-extrabold text-amber-950 flex items-center gap-1.5">
+          <div className="bg-emerald-50 rounded-3xl border border-emerald-200 p-5">
+            <h3 className="text-sm font-extrabold text-emerald-950 flex items-center gap-1.5">
               <span>🛡️</span> Conseils de sécurité DJASSA
             </h3>
-            <ul className="text-xs text-amber-900 space-y-1.5 mt-2 list-disc pl-4">
+            <ul className="text-xs text-emerald-900 space-y-1.5 mt-2 list-disc pl-4">
               <li>
                 Ne versez jamais d&apos;acompte (Wave, Orange Money, MTN) avant
                 d&apos;avoir vu et testé l&apos;article en main propre.
               </li>
               <li>
-                Privilégiez les rencontres en journée dans un lieu public animé
-                (centre commercial, station-service, carrefour).
-              </li>
-              <li>
-                Vérifiez le bon fonctionnement et la facture d&apos;origine pour
-                les téléphones et appareils électroniques.
+                Privilégiez les rencontres en journée dans un lieu public animé.
               </li>
             </ul>
           </div>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={signalerAnnonce}
+              disabled={signale}
+              className="text-xs font-bold text-gray-500 hover:text-red-600 transition"
+            >
+              {signale
+                ? "🚩 Annonce signalée à l'équipe DJASSA"
+                : "🚩 Signaler cette annonce"}
+            </button>
+          </div>
         </div>
       </div>
+      {/* Section Annonces similaires (même catégorie ou même commune) */}
+      {similaires.length > 0 && (
+        <section className="mt-14 pt-10 border-t border-gray-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                Annonces similaires à Abidjan
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                Autres articles dans la même catégorie ou à {annonce.commune}
+              </p>
+            </div>
+            <Link
+              href="/annonces"
+              className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
+            >
+              Voir tout le catalogue →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {similaires.map((sim) => (
+              <Link
+                key={sim.id}
+                href={`/annonces/${sim.id}`}
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-emerald-400 transition flex flex-col"
+              >
+                <div className="h-44 bg-gray-100 relative">
+                  {Array.isArray(sim.photos) && sim.photos.length > 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={String(sim.photos)}
+                      alt={sim.titre}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                      Aucune photo
+                    </div>
+                  )}
+                  <span className="absolute top-2.5 left-2.5 bg-white/95 text-gray-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                    {sim.etat}
+                  </span>
+                </div>
+
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <p className="text-emerald-700 font-black text-base">
+                      {formaterPrixFCFA(sim.prix)}
+                    </p>
+                    <h3 className="font-bold text-gray-900 text-sm mt-1 line-clamp-2">
+                      {sim.titre}
+                    </h3>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                    📍 {sim.commune}
+                    {sim.quartier ? ` (${sim.quartier})` : ""}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
+
 export default function DetailAnnoncePage() {
   return (
     <Suspense
