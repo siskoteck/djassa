@@ -1,24 +1,15 @@
 export const CATEGORIES_DJASSA = [
   "Téléphones & Tablettes",
-  "Informatique & Jeux vidéo",
-  "TV, Audio & Photo",
-  "Électroménager",
-  "Meubles & Décoration",
-  "Mode, Vêtements & Chaussures",
-  "Beauté & Cosmétiques",
+  "Ordinateurs & Électronique",
   "Véhicules & Motos",
-  "Pièces détachées & Accessoires",
-  "Bricolage & Matériaux",
-  "Bébé & Enfant",
+  "Immobilier & Location",
+  "Mode & Vêtements",
+  "Maison & Électroménager",
+  "Meubles & Décoration",
+  "Emploi & Services",
+  "Beauté & Cosmétiques",
   "Sport & Loisirs",
-  "Autre",
-] as const;
-
-export const ETATS_ARTICLE = [
-  "Neuf (jamais utilisé)",
-  "Occasion - Comme neuf",
-  "Occasion - Bon état",
-  "Occasion - À réparer",
+  "Autres articles",
 ] as const;
 
 export const COMMUNES = [
@@ -36,4 +27,3 @@ export const COMMUNES = [
   "Treichville",
   "Yopougon",
 ] as const;
-export const METIERS = CATEGORIES_DJASSA;
