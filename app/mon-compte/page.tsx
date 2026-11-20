@@ -40,7 +40,8 @@ export default function MonCompteDjassaPage() {
       }
 
       setUserId(user.id);
-      setEmailUser(user.email || "");
+      const emailActuel = (user.email || "").trim().toLowerCase();
+      setEmailUser(emailActuel);
 
       const [resProfil, resAnnonces] = await Promise.all([
         supabase
@@ -59,6 +60,14 @@ export default function MonCompteDjassaPage() {
         setNom(resProfil.data.nom || "");
         setTelephone(resProfil.data.telephone || "");
         setCommune(resProfil.data.commune || "Treichville");
+
+        // Synchronise l'email sur les anciens comptes si absent
+        if (!resProfil.data.email && emailActuel) {
+          await supabase
+            .from("utilisateurs")
+            .update({ email: emailActuel })
+            .eq("id", user.id);
+        }
       } else {
         setNom(user.user_metadata?.nom || "");
         setTelephone(user.user_metadata?.telephone || "");
@@ -74,7 +83,6 @@ export default function MonCompteDjassaPage() {
 
     chargerEspaceVendeur();
   }, [router]);
-
   async function handleSaveProfil(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
@@ -87,6 +95,7 @@ export default function MonCompteDjassaPage() {
         id: userId,
         nom: nom.trim() || "Vendeur DJASSA",
         telephone: telephone.trim(),
+        email: emailUser.trim().toLowerCase(),
         commune,
       },
     ]);
@@ -94,7 +103,9 @@ export default function MonCompteDjassaPage() {
     if (error) {
       setMsgProfil("Erreur : " + error.message);
     } else {
-      setMsgProfil("✅ Vos informations vendeur ont été enregistrées.");
+      setMsgProfil(
+        "✅ Vos informations vendeur ont été enregistrées (connexion par téléphone activée)."
+      );
     }
     setSavingProfil(false);
   }
@@ -136,7 +147,6 @@ export default function MonCompteDjassaPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-      {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -148,7 +158,7 @@ export default function MonCompteDjassaPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/publier"
-            className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition"
           >
             + Nouvelle annonce
           </Link>
@@ -162,7 +172,6 @@ export default function MonCompteDjassaPage() {
         </div>
       </div>
 
-      {/* Formulaire Profil Vendeur */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-extrabold text-gray-900 mb-4">
           Mes coordonnées par défaut
@@ -215,7 +224,7 @@ export default function MonCompteDjassaPage() {
           </div>
 
           {msgProfil && (
-            <p className="text-xs font-bold text-green-700">{msgProfil}</p>
+            <p className="text-xs font-bold text-emerald-700">{msgProfil}</p>
           )}
 
           <button
@@ -228,7 +237,6 @@ export default function MonCompteDjassaPage() {
         </form>
       </div>
 
-      {/* Liste des annonces publiées par ce vendeur */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-extrabold text-gray-900 mb-4">
           Mes annonces publiées ({mesAnnonces.length})
@@ -241,7 +249,7 @@ export default function MonCompteDjassaPage() {
             </p>
             <Link
               href="/publier"
-              className="inline-block bg-orange-600 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl hover:bg-orange-700 transition"
+              className="inline-block bg-emerald-600 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition"
             >
               + Publier ma première annonce
             </Link>
@@ -254,10 +262,10 @@ export default function MonCompteDjassaPage() {
                 className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-3.5">
-                  {ann.photos && ann.photos.length > 0 ? (
+                  {Array.isArray(ann.photos) && ann.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={ann.photos[0]}
+                      src={String(ann.photos)}
                       alt={ann.titre}
                       className="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0"
                     />
@@ -272,7 +280,7 @@ export default function MonCompteDjassaPage() {
                       <span
                         className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
                           ann.statut === "active"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-emerald-100 text-emerald-800"
                             : "bg-gray-200 text-gray-700"
                         }`}
                       >
@@ -285,11 +293,11 @@ export default function MonCompteDjassaPage() {
 
                     <Link
                       href={`/annonces/${ann.id}`}
-                      className="font-bold text-gray-900 text-sm hover:text-orange-600"
+                      className="font-bold text-gray-900 text-sm hover:text-emerald-700"
                     >
                       {ann.titre}
                     </Link>
-                    <p className="text-orange-600 font-extrabold text-xs mt-0.5">
+                    <p className="text-emerald-700 font-extrabold text-xs mt-0.5">
                       {ann.prix > 0
                         ? ann.prix.toLocaleString("fr-FR") + " FCFA"
                         : "Prix à débattre"}
