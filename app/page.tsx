@@ -4,7 +4,7 @@ export default function HomeDjassaPage() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
       <span className="bg-orange-100 text-orange-800 text-xs font-extrabold px-3 py-1 rounded-full mb-4">
-        CÔTE D&apos;IVOIRE • ABIDJAN
+        MARCHÉ EN LIGNE • CÔTE D&apos;IVOIRE
       </span>
       <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
         Bienvenue sur <span className="text-orange-600">DJASSA</span>
@@ -24,7 +24,7 @@ export default function HomeDjassaPage() {
           href="/publier"
           className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-900 font-bold px-6 py-3 rounded-xl transition"
         >
-          + Publier une annonce gratuite
+          + Publier une annonce
         </Link>
       </div>
     </main>
