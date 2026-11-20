@@ -19,7 +19,6 @@ export default function ConnexionDjassaPage() {
       return valeur.toLowerCase();
     }
 
-    // Recherche par numéro de téléphone (en comparant uniquement les chiffres)
     const chiffresSaisis = valeur.replace(/\D/g, "");
     if (chiffresSaisis.length < 8) return null;
 
@@ -41,6 +40,7 @@ export default function ConnexionDjassaPage() {
 
     return trouve?.email || null;
   }
+
   async function handleConnexion(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -85,7 +85,7 @@ export default function ConnexionDjassaPage() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(emailFinal, {
-      redirectTo: `${window.location.origin}/mon-compte`,
+      redirectTo: `${window.location.origin}/reinitialiser-mot-de-passe`,
     });
 
     if (error) {
@@ -96,6 +96,7 @@ export default function ConnexionDjassaPage() {
       );
     }
   }
+
   return (
     <div className="max-w-md mx-auto px-4 py-14">
       <div className="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 shadow-sm">
@@ -148,6 +149,7 @@ export default function ConnexionDjassaPage() {
               className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
+
           {erreur && (
             <div className="text-red-600 text-xs bg-red-50 border border-red-200 p-3 rounded-xl">
               {erreur}
