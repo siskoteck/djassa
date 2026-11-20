@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavbarDjassa } from "@/components/NavbarDjassa";
@@ -36,6 +37,25 @@ export default function RootLayout({
             <p className="font-bold text-white">
               DJASSA Côte d&apos;Ivoire — Le marché des bonnes affaires à Abidjan
             </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-5 font-semibold">
+              <Link href="/cgu" className="hover:text-emerald-400 transition">
+                Conditions Générales (CGU)
+              </Link>
+              <Link
+                href="/confidentialite"
+                className="hover:text-emerald-400 transition"
+              >
+                Confidentialité
+              </Link>
+              <Link
+                href="/contact"
+                className="hover:text-emerald-400 transition"
+              >
+                Contact
+              </Link>
+            </div>
+
             <p>© 2026 DJASSA. Tous droits réservés.</p>
           </div>
         </footer>
