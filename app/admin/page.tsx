@@ -54,7 +54,9 @@ export default function AdminDjassaPage() {
   const [messages, setMessages] = useState<MessageContactAdmin[]>([]);
   const [recherche, setRecherche] = useState("");
 
+  const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
+  const [verifMdpEnCours, setVerifMdpEnCours] = useState(false);
   const [msgMdp, setMsgMdp] = useState("");
   useEffect(() => {
     async function chargerAdmin() {
@@ -167,17 +169,47 @@ export default function AdminDjassaPage() {
   async function handleChangerMdp(e: React.FormEvent) {
     e.preventDefault();
     setMsgMdp("");
-    if (nouveauMdp.length < 6) {
-      setMsgMdp("6 caractères minimum.");
+
+    if (!ancienMdp) {
+      setMsgMdp("❌ Veuillez saisir votre ancien mot de passe.");
       return;
     }
+    if (nouveauMdp.length < 6) {
+      setMsgMdp("❌ Le nouveau mot de passe doit contenir 6 caractères minimum.");
+      return;
+    }
+
+    setVerifMdpEnCours(true);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const emailActuel = sessionData.session?.user?.email;
+
+    if (!emailActuel) {
+      setMsgMdp("❌ Session expirée, veuillez vous reconnecter.");
+      setVerifMdpEnCours(false);
+      return;
+    }
+
+    const { error: checkError } = await supabase.auth.signInWithPassword({
+      email: emailActuel,
+      password: ancienMdp,
+    });
+
+    if (checkError) {
+      setMsgMdp("❌ L'ancien mot de passe est incorrect.");
+      setVerifMdpEnCours(false);
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password: nouveauMdp });
     if (error) {
-      setMsgMdp("Erreur : " + error.message);
+      setMsgMdp("❌ Erreur : " + error.message);
     } else {
-      setMsgMdp("✅ Mot de passe administrateur mis à jour !");
+      setMsgMdp("✅ Mot de passe administrateur mis à jour avec succès !");
+      setAncienMdp("");
       setNouveauMdp("");
     }
+    setVerifMdpEnCours(false);
   }
   if (loading || !autorise) {
     return (
@@ -210,7 +242,6 @@ export default function AdminDjassaPage() {
         </h1>
       </div>
 
-      {/* Compteurs */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">
@@ -249,7 +280,6 @@ export default function AdminDjassaPage() {
         </div>
       </div>
 
-      {/* Onglets */}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -481,32 +511,48 @@ export default function AdminDjassaPage() {
         </div>
       )}
 
-      {/* Changement de mot de passe administrateur */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm max-w-xl">
-        <h2 className="text-base font-extrabold text-gray-900 mb-2">
+      {/* Changement de mot de passe administrateur avec vérification */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm max-w-2xl">
+        <h2 className="text-base font-extrabold text-gray-900 mb-3">
           🔐 Sécurité du compte administrateur
         </h2>
         <form
           onSubmit={handleChangerMdp}
-          className="flex flex-col sm:flex-row gap-3"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
         >
           <input
             type="password"
+            required
+            value={ancienMdp}
+            onChange={(e) => setAncienMdp(e.target.value)}
+            placeholder="Ancien mot de passe *"
+            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
+          />
+          <input
+            type="password"
+            required
             minLength={6}
             value={nouveauMdp}
             onChange={(e) => setNouveauMdp(e.target.value)}
-            placeholder="Nouveau mot de passe (6 car. min)"
-            className="flex-1 border border-gray-300 rounded-xl px-4 py-2 text-sm"
+            placeholder="Nouveau mot de passe *"
+            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
           />
           <button
             type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition"
+            disabled={verifMdpEnCours}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition disabled:opacity-50"
           >
-            Mettre à jour
+            {verifMdpEnCours ? "Vérification..." : "Mettre à jour"}
           </button>
         </form>
         {msgMdp && (
-          <p className="text-xs font-bold text-emerald-700 mt-2">{msgMdp}</p>
+          <p
+            className={`text-xs font-bold mt-2 ${
+              msgMdp.startsWith("✅") ? "text-emerald-700" : "text-red-600"
+            }`}
+          >
+            {msgMdp}
+          </p>
         )}
       </div>
     </div>

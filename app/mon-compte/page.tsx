@@ -28,6 +28,13 @@ export default function MonCompteDjassaPage() {
   const [loading, setLoading] = useState(true);
   const [savingProfil, setSavingProfil] = useState(false);
   const [msgProfil, setMsgProfil] = useState("");
+
+  // Changement de mot de passe vendeur avec vérification de l'ancien
+  const [ancienMdp, setAncienMdp] = useState("");
+  const [nouveauMdp, setNouveauMdp] = useState("");
+  const [verifMdpEnCours, setVerifMdpEnCours] = useState(false);
+  const [msgMdp, setMsgMdp] = useState("");
+
   const [suppressionCompteEnCours, setSuppressionCompteEnCours] = useState(false);
 
   useEffect(() => {
@@ -108,6 +115,43 @@ export default function MonCompteDjassaPage() {
       );
     }
     setSavingProfil(false);
+  }
+
+  async function handleChangerMdpVendeur(e: React.FormEvent) {
+    e.preventDefault();
+    setMsgMdp("");
+
+    if (!ancienMdp) {
+      setMsgMdp("❌ Veuillez saisir votre ancien mot de passe.");
+      return;
+    }
+    if (nouveauMdp.length < 6) {
+      setMsgMdp("❌ Le nouveau mot de passe doit contenir 6 caractères minimum.");
+      return;
+    }
+
+    setVerifMdpEnCours(true);
+
+    const { error: checkError } = await supabase.auth.signInWithPassword({
+      email: emailUser,
+      password: ancienMdp,
+    });
+
+    if (checkError) {
+      setMsgMdp("❌ L'ancien mot de passe est incorrect.");
+      setVerifMdpEnCours(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: nouveauMdp });
+    if (error) {
+      setMsgMdp("❌ Erreur : " + error.message);
+    } else {
+      setMsgMdp("✅ Votre mot de passe a été modifié avec succès !");
+      setAncienMdp("");
+      setNouveauMdp("");
+    }
+    setVerifMdpEnCours(false);
   }
 
   async function toggleStatutAnnonce(id: string, statutActuel: string) {
@@ -265,6 +309,51 @@ export default function MonCompteDjassaPage() {
             {savingProfil ? "Enregistrement..." : "Enregistrer mes infos"}
           </button>
         </form>
+      </div>
+
+      {/* Modification du mot de passe avec vérification de l'ancien */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-extrabold text-gray-900 mb-3">
+          🔐 Modifier mon mot de passe
+        </h2>
+        <form
+          onSubmit={handleChangerMdpVendeur}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+        >
+          <input
+            type="password"
+            required
+            value={ancienMdp}
+            onChange={(e) => setAncienMdp(e.target.value)}
+            placeholder="Ancien mot de passe *"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+          />
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={nouveauMdp}
+            onChange={(e) => setNouveauMdp(e.target.value)}
+            placeholder="Nouveau mot de passe *"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={verifMdpEnCours}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {verifMdpEnCours ? "Vérification..." : "Mettre à jour"}
+          </button>
+        </form>
+        {msgMdp && (
+          <p
+            className={`text-xs font-bold mt-2 ${
+              msgMdp.startsWith("✅") ? "text-emerald-700" : "text-red-600"
+            }`}
+          >
+            {msgMdp}
+          </p>
+        )}
       </div>
       <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
