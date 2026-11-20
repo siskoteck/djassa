@@ -28,6 +28,7 @@ export default function MonCompteDjassaPage() {
   const [loading, setLoading] = useState(true);
   const [savingProfil, setSavingProfil] = useState(false);
   const [msgProfil, setMsgProfil] = useState("");
+  const [suppressionCompteEnCours, setSuppressionCompteEnCours] = useState(false);
 
   useEffect(() => {
     async function chargerEspaceVendeur() {
@@ -61,7 +62,6 @@ export default function MonCompteDjassaPage() {
         setTelephone(resProfil.data.telephone || "");
         setCommune(resProfil.data.commune || "Treichville");
 
-        // Synchronise l'email sur les anciens comptes si absent
         if (!resProfil.data.email && emailActuel) {
           await supabase
             .from("utilisateurs")
@@ -134,6 +134,36 @@ export default function MonCompteDjassaPage() {
 
   async function handleDeconnexion() {
     await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
+  async function handleSupprimerMonCompte() {
+    const confirmation1 = confirm(
+      "⚠️ ATTENTION : Voulez-vous vraiment supprimer définitivement votre compte DJASSA ainsi que toutes vos annonces ?"
+    );
+    if (!confirmation1) return;
+
+    const saisie = prompt(
+      'Pour confirmer la suppression définitive, tapez SUPPRIMER en majuscules :'
+    );
+    if (saisie !== "SUPPRIMER") {
+      alert("Suppression annulée.");
+      return;
+    }
+
+    setSuppressionCompteEnCours(true);
+
+    const { error } = await supabase.rpc("supprimer_mon_compte");
+
+    if (error) {
+      alert("Erreur lors de la suppression du compte : " + error.message);
+      setSuppressionCompteEnCours(false);
+      return;
+    }
+
+    await supabase.auth.signOut();
+    alert("Votre compte DJASSA et toutes vos annonces ont été supprimés.");
     router.push("/");
     router.refresh();
   }
@@ -236,11 +266,18 @@ export default function MonCompteDjassaPage() {
           </button>
         </form>
       </div>
-
       <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-extrabold text-gray-900 mb-4">
-          Mes annonces publiées ({mesAnnonces.length})
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-extrabold text-gray-900">
+            Mes annonces publiées ({mesAnnonces.length})
+          </h2>
+          <Link
+            href="/mes-annonces"
+            className="text-xs font-bold text-emerald-700 hover:underline"
+          >
+            Gérer et modifier mes annonces →
+          </Link>
+        </div>
 
         {mesAnnonces.length === 0 ? (
           <div className="text-center py-8">
@@ -327,6 +364,27 @@ export default function MonCompteDjassaPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Zone de danger : Suppression définitive du compte */}
+      <div className="bg-red-50/70 rounded-3xl border border-red-200 p-6">
+        <h2 className="text-base font-extrabold text-red-900">
+          ⚠️ Zone de danger — Supprimer mon compte
+        </h2>
+        <p className="text-xs sm:text-sm text-red-800 mt-1 mb-4">
+          La suppression de votre compte est irréversible. Toutes vos annonces
+          publiées et vos informations de profil seront définitivement effacées.
+        </p>
+        <button
+          type="button"
+          onClick={handleSupprimerMonCompte}
+          disabled={suppressionCompteEnCours}
+          className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+        >
+          {suppressionCompteEnCours
+            ? "Suppression définitive en cours..."
+            : "🗑️ Supprimer définitivement mon compte"}
+        </button>
       </div>
     </div>
   );
