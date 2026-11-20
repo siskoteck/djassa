@@ -1,4 +1,4 @@
-export const CATEGORIES_DJASSA = [
+export const CATEGORIES_DJASSA: string[] = [
   "Téléphones & Tablettes",
   "Ordinateurs & Électronique",
   "Véhicules & Motos",
@@ -10,9 +10,9 @@ export const CATEGORIES_DJASSA = [
   "Beauté & Cosmétiques",
   "Sport & Loisirs",
   "Autres articles",
-] as const;
+];
 
-export const COMMUNES = [
+export const COMMUNES: string[] = [
   "Abobo",
   "Adjamé",
   "Anyama",
@@ -26,4 +26,4 @@ export const COMMUNES = [
   "Songon",
   "Treichville",
   "Yopougon",
-] as const;
+];
