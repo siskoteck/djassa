@@ -1,18 +1,4 @@
-export const CATEGORIES_DJASSA: string[] = [
-  "Téléphones & Tablettes",
-  "Ordinateurs & Électronique",
-  "Véhicules & Motos",
-  "Immobilier & Location",
-  "Mode & Vêtements",
-  "Maison & Électroménager",
-  "Meubles & Décoration",
-  "Emploi & Services",
-  "Beauté & Cosmétiques",
-  "Sport & Loisirs",
-  "Autres articles",
-];
-
-export const COMMUNES: string[] = [
+export const COMMUNES_ABIDJAN = [
   "Abobo",
   "Adjamé",
   "Anyama",
@@ -26,4 +12,12 @@ export const COMMUNES: string[] = [
   "Songon",
   "Treichville",
   "Yopougon",
+  "Hors Abidjan (Intérieur)",
+];
+
+export const ETATS_ARTICLE = [
+  "Neuf (jamais utilisé)",
+  "Comme neuf",
+  "Occasion - Bon état",
+  "Occasion - État correct",
 ];
