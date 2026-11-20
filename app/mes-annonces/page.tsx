@@ -17,6 +17,7 @@ interface MonAnnonceItem {
   quartier: string | null;
   statut: string;
   booste: boolean;
+  vues?: number;
   photos: string[];
 }
 
@@ -36,6 +37,7 @@ export default function MesAnnoncesPage() {
   const [editQuartier, setEditQuartier] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+
   useEffect(() => {
     async function chargerMesAnnonces() {
       const { data } = await supabase.auth.getSession();
@@ -70,6 +72,7 @@ export default function MesAnnoncesPage() {
     setEditQuartier(ann.quartier || "");
     setEditDescription(ann.description || "");
   }
+
   async function enregistrerModification(e: React.FormEvent, id: string) {
     e.preventDefault();
     if (!editTitre.trim()) return;
@@ -147,7 +150,7 @@ export default function MesAnnoncesPage() {
             📦 Mes annonces ({annonces.length})
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Modifiez vos prix, mettez à jour vos articles ou marquez-les comme vendus.
+            Modifiez vos prix, suivez vos vues ou marquez vos articles comme vendus.
           </p>
         </div>
 
@@ -194,6 +197,7 @@ export default function MesAnnoncesPage() {
           ✅ Vendues ({nbVendues})
         </button>
       </div>
+
       {annoncesFiltrees.length === 0 ? (
         <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center">
           <p className="text-base font-bold text-gray-900 mb-2">
@@ -395,7 +399,10 @@ export default function MesAnnoncesPage() {
 
                         <p className="text-xs text-gray-500 mt-1">
                           📍 {ann.commune}
-                          {ann.quartier ? ` (${ann.quartier})` : ""}
+                          {ann.quartier ? ` (${ann.quartier})` : ""} •{" "}
+                          <span className="font-bold text-emerald-700">
+                            👁️ {ann.vues || 0} vue{(ann.vues || 0) > 1 ? "s" : ""}
+                          </span>
                         </p>
                       </div>
                     </div>

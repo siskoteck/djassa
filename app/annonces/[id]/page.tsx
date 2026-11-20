@@ -20,6 +20,7 @@ interface AnnonceDetail {
   telephone: string | null;
   photos: string[];
   statut: string;
+  vues?: number;
   categories?: {
     nom: string;
     icone: string | null;
@@ -52,6 +53,7 @@ function ContenuDetailAnnonce() {
   const [annonce, setAnnonce] = useState<AnnonceDetail | null>(null);
   const [vendeur, setVendeur] = useState<VendeurInfo | null>(null);
   const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
+  const [nbVues, setNbVues] = useState<number>(0);
   const [photoActive, setPhotoActive] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [copieLien, setCopieLien] = useState(false);
@@ -75,8 +77,21 @@ function ContenuDetailAnnonce() {
       if (!error && data) {
         const detail = data as AnnonceDetail;
         setAnnonce(detail);
+        setNbVues(detail.vues || 0);
 
-        // Chargement parallèle du vendeur et des annonces similaires
+        // Incrémente le compteur de vues 1 fois par session
+        const cleVue = `djassa_vu_${detail.id}`;
+        if (typeof window !== "undefined" && !sessionStorage.getItem(cleVue)) {
+          sessionStorage.setItem(cleVue, "1");
+          supabase
+            .rpc("incrementer_vue_annonce", { annonce_uuid: detail.id })
+            .then(({ data: vuesMaj }) => {
+              if (typeof vuesMaj === "number") {
+                setNbVues(vuesMaj);
+              }
+            });
+        }
+
         const promesseVendeur = detail.user_id
           ? supabase
               .from("utilisateurs")
@@ -108,7 +123,6 @@ function ContenuDetailAnnonce() {
         }
 
         if (resSim.data) {
-          // Prioriser celles qui ont la même catégorie ET la même commune
           const triees = [...resSim.data].sort((a, b) => {
             const scoreA =
               (a.categorie_id === detail.categorie_id ? 2 : 0) +
@@ -305,6 +319,7 @@ function ContenuDetailAnnonce() {
             </p>
           </div>
         </div>
+
         <div className="lg:col-span-5 space-y-5">
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -332,13 +347,19 @@ function ContenuDetailAnnonce() {
                 📍 <strong className="text-gray-900">{annonce.commune}</strong>
                 {annonce.quartier ? ` (${annonce.quartier})` : ""}
               </p>
-              <p className="text-xs text-gray-400">
-                Publiée le{" "}
-                {new Date(annonce.created_at).toLocaleDateString("fr-FR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
+              <p className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
+                <span>
+                  Publiée le{" "}
+                  {new Date(annonce.created_at).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                <span>•</span>
+                <span className="font-bold text-emerald-700">
+                  👁️ Vu {nbVues} fois
+                </span>
               </p>
             </div>
 
@@ -362,7 +383,6 @@ function ContenuDetailAnnonce() {
               </div>
             )}
           </div>
-
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <p className="text-xs font-bold uppercase text-gray-400 mb-2">
               Informations vendeur
@@ -422,7 +442,7 @@ function ContenuDetailAnnonce() {
           </div>
         </div>
       </div>
-      {/* Section Annonces similaires (même catégorie ou même commune) */}
+
       {similaires.length > 0 && (
         <section className="mt-14 pt-10 border-t border-gray-200">
           <div className="flex items-center justify-between mb-6">
