@@ -39,16 +39,18 @@ export default function RegisterDjassaPage() {
       return;
     }
 
-    if (data.user) {
+        if (data.user) {
       await supabase.from("utilisateurs").upsert([
         {
           id: data.user.id,
           nom: nom.trim(),
           telephone: telephone.trim(),
+          email: email.trim().toLowerCase(),
           commune,
         },
       ]);
     }
+
 
     router.push("/mon-compte");
     router.refresh();

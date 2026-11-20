@@ -7,25 +7,63 @@ import { supabase } from "@/lib/supabase";
 
 export default function ConnexionDjassaPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifiant, setIdentifiant] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState("");
   const [infoReset, setInfoReset] = useState("");
 
+  async function resoudreEmail(saisie: string): Promise<string | null> {
+    const valeur = saisie.trim();
+    if (valeur.includes("@")) {
+      return valeur.toLowerCase();
+    }
+
+    // Recherche par numéro de téléphone (en comparant uniquement les chiffres)
+    const chiffresSaisis = valeur.replace(/\D/g, "");
+    if (chiffresSaisis.length < 8) return null;
+
+    const { data } = await supabase
+      .from("utilisateurs")
+      .select("email, telephone")
+      .not("email", "is", null);
+
+    if (!data) return null;
+
+    const trouve = data.find((u) => {
+      const telBase = (u.telephone || "").replace(/\D/g, "");
+      return (
+        telBase === chiffresSaisis ||
+        telBase.endsWith(chiffresSaisis) ||
+        chiffresSaisis.endsWith(telBase)
+      );
+    });
+
+    return trouve?.email || null;
+  }
   async function handleConnexion(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setErreur("");
     setInfoReset("");
 
+    const emailFinal = await resoudreEmail(identifiant);
+
+    if (!emailFinal) {
+      setErreur(
+        "Aucun compte trouvé avec ce numéro de téléphone. Essayez avec votre adresse e-mail."
+      );
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: emailFinal,
       password,
     });
 
     if (error) {
-      setErreur("Adresse e-mail ou mot de passe incorrect.");
+      setErreur("Identifiant ou mot de passe incorrect.");
       setLoading(false);
       return;
     }
@@ -33,16 +71,20 @@ export default function ConnexionDjassaPage() {
     router.push("/mon-compte");
     router.refresh();
   }
+
   async function handleMotDePasseOublie() {
     setErreur("");
     setInfoReset("");
 
-    if (!email.trim()) {
-      setErreur("Saisissez d'abord votre adresse e-mail ci-dessus.");
+    const emailFinal = await resoudreEmail(identifiant);
+    if (!emailFinal) {
+      setErreur(
+        "Saisissez votre adresse e-mail ou votre numéro de téléphone enregistré ci-dessus."
+      );
       return;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    const { error } = await supabase.auth.resetPasswordForEmail(emailFinal, {
       redirectTo: `${window.location.origin}/mon-compte`,
     });
 
@@ -50,11 +92,10 @@ export default function ConnexionDjassaPage() {
       setErreur(error.message);
     } else {
       setInfoReset(
-        "Un lien de réinitialisation vient d'être envoyé sur votre boîte e-mail."
+        `Un lien de réinitialisation vient d'être envoyé à ${emailFinal}.`
       );
     }
   }
-
   return (
     <div className="max-w-md mx-auto px-4 py-14">
       <div className="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 shadow-sm">
@@ -66,20 +107,21 @@ export default function ConnexionDjassaPage() {
             Connexion <span className="text-emerald-600">DJASSA</span>
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Accédez à votre boutique et gérez vos annonces à Abidjan.
+            Connectez-vous avec votre e-mail ou votre numéro de téléphone.
           </p>
         </div>
+
         <form onSubmit={handleConnexion} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">
-              Adresse e-mail
+              Adresse e-mail ou Numéro de téléphone *
             </label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.com"
+              value={identifiant}
+              onChange={(e) => setIdentifiant(e.target.value)}
+              placeholder="Ex: 07 00 00 00 00 ou vous@exemple.com"
               className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
