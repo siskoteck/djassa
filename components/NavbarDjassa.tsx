@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,6 +10,7 @@ const ADMIN_EMAIL = (
 ).toLowerCase();
 
 export function NavbarDjassa() {
+  const pathname = usePathname();
   const [connecte, setConnecte] = useState(false);
   const [estAdmin, setEstAdmin] = useState(false);
 
@@ -30,6 +32,22 @@ export function NavbarDjassa() {
     };
   }, []);
 
+  function styleLienDesktop(href: string) {
+    const actif =
+      href === "/" ? pathname === "/" : pathname?.startsWith(href);
+    return actif
+      ? "bg-emerald-100 text-emerald-800 font-extrabold px-3.5 py-2 rounded-xl transition"
+      : "text-gray-700 hover:text-emerald-700 hover:bg-gray-50 font-semibold px-3.5 py-2 rounded-xl transition";
+  }
+
+  function styleLienMobile(href: string) {
+    const actif =
+      href === "/" ? pathname === "/" : pathname?.startsWith(href);
+    return actif
+      ? "bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1.5 rounded-lg transition"
+      : "text-gray-700 hover:text-emerald-700 font-semibold px-3 py-1.5 rounded-lg transition";
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,17 +61,17 @@ export function NavbarDjassa() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-700">
-            <Link href="/" className="hover:text-emerald-600 transition">
+          <nav className="hidden md:flex items-center gap-2 text-sm">
+            <Link href="/" className={styleLienDesktop("/")}>
               Accueil
             </Link>
-            <Link href="/annonces" className="hover:text-emerald-600 transition">
+            <Link href="/annonces" className={styleLienDesktop("/annonces")}>
               Toutes les annonces
             </Link>
             {connecte && (
               <Link
                 href="/mes-annonces"
-                className="text-emerald-700 hover:text-emerald-800 font-bold transition"
+                className={styleLienDesktop("/mes-annonces")}
               >
                 Mes annonces
               </Link>
@@ -64,7 +82,11 @@ export function NavbarDjassa() {
             {estAdmin && (
               <Link
                 href="/admin"
-                className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-extrabold px-3 py-2.5 rounded-xl transition"
+                className={`text-xs font-extrabold px-3 py-2.5 rounded-xl transition ${
+                  pathname?.startsWith("/admin")
+                    ? "bg-emerald-700 text-white ring-2 ring-emerald-300"
+                    : "bg-gray-900 hover:bg-gray-800 text-white"
+                }`}
               >
                 ⚙️ Admin
               </Link>
@@ -72,7 +94,11 @@ export function NavbarDjassa() {
 
             <Link
               href="/publier"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2.5 rounded-xl transition shadow-sm"
+              className={`text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2.5 rounded-xl transition shadow-sm ${
+                pathname?.startsWith("/publier")
+                  ? "bg-emerald-800 text-white ring-2 ring-emerald-300"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              }`}
             >
               + Vendre
             </Link>
@@ -80,14 +106,22 @@ export function NavbarDjassa() {
             {connecte ? (
               <Link
                 href="/mon-compte"
-                className="border border-gray-300 hover:bg-gray-50 text-gray-800 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-2.5 rounded-xl transition"
+                className={`text-xs sm:text-sm font-bold px-3 sm:px-3.5 py-2.5 rounded-xl border transition ${
+                  pathname?.startsWith("/mon-compte")
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-900"
+                    : "border-gray-300 hover:bg-gray-50 text-gray-800"
+                }`}
               >
                 Mon compte
               </Link>
             ) : (
               <Link
                 href="/connexion"
-                className="border border-gray-300 hover:bg-gray-50 text-gray-800 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-2.5 rounded-xl transition"
+                className={`text-xs sm:text-sm font-bold px-3 sm:px-3.5 py-2.5 rounded-xl border transition ${
+                  pathname?.startsWith("/connexion")
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-900"
+                    : "border-gray-300 hover:bg-gray-50 text-gray-800"
+                }`}
               >
                 Connexion
               </Link>
@@ -95,16 +129,19 @@ export function NavbarDjassa() {
           </div>
         </div>
 
-        {/* Barre mobile */}
-        <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs font-bold text-gray-700">
-          <Link href="/" className="hover:text-emerald-600">
+        {/* Barre mobile avec onglet actif en surbrillance */}
+        <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs">
+          <Link href="/" className={styleLienMobile("/")}>
             🏠 Accueil
           </Link>
-          <Link href="/annonces" className="hover:text-emerald-600">
+          <Link href="/annonces" className={styleLienMobile("/annonces")}>
             🛍️ Catalogue
           </Link>
           {connecte && (
-            <Link href="/mes-annonces" className="text-emerald-700">
+            <Link
+              href="/mes-annonces"
+              className={styleLienMobile("/mes-annonces")}
+            >
               📦 Mes annonces
             </Link>
           )}
