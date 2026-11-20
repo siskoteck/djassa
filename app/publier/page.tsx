@@ -11,7 +11,6 @@ interface Categorie {
   nom: string;
   icone: string | null;
 }
-
 export default function PublierAnnoncePage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
@@ -21,7 +20,7 @@ export default function PublierAnnoncePage() {
   const [titre, setTitre] = useState("");
   const [categorieId, setCategorieId] = useState<number>(1);
   const [prix, setPrix] = useState("");
-  const [etat, setEtat] = useState(ETATS_ARTICLE[2] || "Occasion - Bon état");
+  const [etat, setEtat] = useState(ETATS_ARTICLE[0] || "Occasion - Bon état");
   const [commune, setCommune] = useState("Treichville");
   const [quartier, setQuartier] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -61,7 +60,6 @@ export default function PublierAnnoncePage() {
 
     initialiser();
   }, []);
-
   function handleSelectionPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -181,7 +179,7 @@ export default function PublierAnnoncePage() {
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               href="/connexion"
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition"
             >
               Se connecter
             </Link>
@@ -196,7 +194,6 @@ export default function PublierAnnoncePage() {
       </div>
     );
   }
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
@@ -208,8 +205,7 @@ export default function PublierAnnoncePage() {
         </p>
 
         <form onSubmit={handlePublier} className="space-y-5">
-          {/* Zone d'ajout de photos (8 maximum) */}
-          <div className="p-4 rounded-2xl bg-orange-50/60 border border-dashed border-orange-300">
+          <div className="p-4 rounded-2xl bg-emerald-50/70 border border-dashed border-emerald-300">
             <label className="block text-sm font-bold text-gray-900 mb-1">
               📸 Photos de l&apos;article ({fichiersPhotos.length}/8 photos)
             </label>
@@ -223,7 +219,7 @@ export default function PublierAnnoncePage() {
                 accept="image/*"
                 multiple
                 onChange={handleSelectionPhotos}
-                className="block w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-600 file:text-white hover:file:bg-orange-700 cursor-pointer"
+                className="block w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
               />
             )}
 
@@ -296,7 +292,6 @@ export default function PublierAnnoncePage() {
               />
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1">
@@ -329,6 +324,7 @@ export default function PublierAnnoncePage() {
               />
             </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1">
@@ -339,7 +335,7 @@ export default function PublierAnnoncePage() {
                 onChange={(e) => setCommune(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
               >
-                {COMMUNES_ABIDJAN.map((c) => (
+                {COMMUNES_ABIDJAN.map((c: string) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -360,7 +356,6 @@ export default function PublierAnnoncePage() {
               />
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-1">
               Description détaillée
@@ -383,7 +378,7 @@ export default function PublierAnnoncePage() {
           <button
             type="submit"
             disabled={publicationEnCours}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl text-sm transition disabled:opacity-50 shadow-sm"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm transition disabled:opacity-50 shadow-sm"
           >
             {publicationEnCours
               ? "Envoi des photos et publication..."
