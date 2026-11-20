@@ -46,8 +46,8 @@ export function NavbarDjassa() {
           <Link href="/" className="hover:text-emerald-600 transition">
             Accueil
           </Link>
-          <Link href="/publier" className="hover:text-emerald-600 transition">
-            Publier
+          <Link href="/annonces" className="hover:text-emerald-600 transition">
+            Toutes les annonces
           </Link>
         </nav>
 
