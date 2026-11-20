@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { obtenirFavorisIds } from "@/lib/favoris";
 
 const ADMIN_EMAIL = (
   process.env.NEXT_PUBLIC_ADMIN_EMAIL || "siskoteck@gmail.com"
@@ -13,6 +14,7 @@ function NavbarDjassaContenu() {
   const pathname = usePathname();
   const [connecte, setConnecte] = useState(false);
   const [estAdmin, setEstAdmin] = useState(false);
+  const [nbFavoris, setNbFavoris] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -27,8 +29,16 @@ function NavbarDjassaContenu() {
       setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL);
     });
 
+    function majFavoris() {
+      setNbFavoris(obtenirFavorisIds().length);
+    }
+
+    majFavoris();
+    window.addEventListener("djassa-favoris-maj", majFavoris);
+
     return () => {
       listener.subscription.unsubscribe();
+      window.removeEventListener("djassa-favoris-maj", majFavoris);
     };
   }, []);
 
@@ -44,8 +54,8 @@ function NavbarDjassaContenu() {
     const actif =
       href === "/" ? pathname === "/" : pathname?.startsWith(href);
     return actif
-      ? "bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1.5 rounded-lg transition"
-      : "text-gray-700 hover:text-emerald-700 font-semibold px-3 py-1.5 rounded-lg transition";
+      ? "bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-1.5 rounded-lg transition"
+      : "text-gray-700 hover:text-emerald-700 font-semibold px-2.5 py-1.5 rounded-lg transition";
   }
 
   return (
@@ -60,12 +70,15 @@ function NavbarDjassaContenu() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-2 text-sm">
+        <nav className="hidden md:flex items-center gap-1.5 text-sm">
           <Link href="/" className={styleLienDesktop("/")}>
             Accueil
           </Link>
           <Link href="/annonces" className={styleLienDesktop("/annonces")}>
-            Toutes les annonces
+            Catalogue
+          </Link>
+          <Link href="/favoris" className={styleLienDesktop("/favoris")}>
+            ❤️ Favoris{nbFavoris > 0 ? ` (${nbFavoris})` : ""}
           </Link>
           {connecte && (
             <Link
@@ -128,7 +141,7 @@ function NavbarDjassaContenu() {
         </div>
       </div>
 
-      {/* Barre mobile avec onglet actif en surbrillance */}
+      {/* Barre mobile */}
       <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs">
         <Link href="/" className={styleLienMobile("/")}>
           🏠 Accueil
@@ -136,12 +149,15 @@ function NavbarDjassaContenu() {
         <Link href="/annonces" className={styleLienMobile("/annonces")}>
           🛍️ Catalogue
         </Link>
+        <Link href="/favoris" className={styleLienMobile("/favoris")}>
+          ❤️ Favoris{nbFavoris > 0 ? ` (${nbFavoris})` : ""}
+        </Link>
         {connecte && (
           <Link
             href="/mes-annonces"
             className={styleLienMobile("/mes-annonces")}
           >
-            📦 Mes annonces
+            📦 Annonces
           </Link>
         )}
       </nav>
