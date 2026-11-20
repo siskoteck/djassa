@@ -53,16 +53,15 @@ export default function RegisterDjassaPage() {
     router.push("/mon-compte");
     router.refresh();
   }
-
   return (
     <div className="max-w-md mx-auto px-4 py-12">
-      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+      <div className="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 shadow-sm">
         <div className="text-center mb-6">
-          <span className="bg-orange-100 text-orange-800 text-xs font-extrabold px-3 py-1 rounded-full">
+          <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">
             GRATUIT • ABIDJAN
           </span>
           <h1 className="text-2xl font-black text-gray-900 mt-2">
-            Créer mon compte DJASSA
+            Créer mon compte <span className="text-emerald-600">DJASSA</span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
             Publiez vos annonces gratuitement et vendez vite près de chez vous.
@@ -80,10 +79,9 @@ export default function RegisterDjassaPage() {
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               placeholder="Ex: Koné Ibrahim ou Boutique Treichville"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -95,7 +93,7 @@ export default function RegisterDjassaPage() {
                 value={telephone}
                 onChange={(e) => setTelephone(e.target.value)}
                 placeholder="07 00 00 00 00"
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
               />
             </div>
 
@@ -106,7 +104,7 @@ export default function RegisterDjassaPage() {
               <select
                 value={commune}
                 onChange={(e) => setCommune(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm bg-white"
+                className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2.5 text-sm bg-white"
               >
                 {COMMUNES_ABIDJAN.map((c: string) => (
                   <option key={c} value={c}>
@@ -127,7 +125,7 @@ export default function RegisterDjassaPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="vous@exemple.com"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
 
@@ -142,10 +140,9 @@ export default function RegisterDjassaPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Choisissez un mot de passe"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
-
           {erreur && (
             <div className="text-red-600 text-xs bg-red-50 border border-red-200 p-3 rounded-xl">
               {erreur}
@@ -155,7 +152,7 @@ export default function RegisterDjassaPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-50"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-50 shadow-sm"
           >
             {loading ? "Création du compte..." : "Créer mon compte DJASSA"}
           </button>
@@ -165,7 +162,7 @@ export default function RegisterDjassaPage() {
           Déjà inscrit ?{" "}
           <Link
             href="/connexion"
-            className="text-orange-600 font-bold hover:underline"
+            className="text-emerald-700 font-bold hover:underline"
           >
             Se connecter
           </Link>
