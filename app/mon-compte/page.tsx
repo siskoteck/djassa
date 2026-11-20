@@ -1,0 +1,325 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { COMMUNES_ABIDJAN } from "@/lib/constantes";
+
+interface AnnonceVendeur {
+  id: string;
+  created_at: string;
+  titre: string;
+  prix: number;
+  commune: string;
+  statut: string;
+  photos: string[];
+}
+
+export default function MonCompteDjassaPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [emailUser, setEmailUser] = useState("");
+  const [nom, setNom] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [commune, setCommune] = useState("Treichville");
+
+  const [mesAnnonces, setMesAnnonces] = useState<AnnonceVendeur[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingProfil, setSavingProfil] = useState(false);
+  const [msgProfil, setMsgProfil] = useState("");
+
+  useEffect(() => {
+    async function chargerEspaceVendeur() {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+
+      if (!user) {
+        router.replace("/connexion");
+        return;
+      }
+
+      setUserId(user.id);
+      setEmailUser(user.email || "");
+
+      const [resProfil, resAnnonces] = await Promise.all([
+        supabase
+          .from("utilisateurs")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("annonces")
+          .select("id, created_at, titre, prix, commune, statut, photos")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (resProfil.data) {
+        setNom(resProfil.data.nom || "");
+        setTelephone(resProfil.data.telephone || "");
+        setCommune(resProfil.data.commune || "Treichville");
+      } else {
+        setNom(user.user_metadata?.nom || "");
+        setTelephone(user.user_metadata?.telephone || "");
+        setCommune(user.user_metadata?.commune || "Treichville");
+      }
+
+      if (resAnnonces.data) {
+        setMesAnnonces(resAnnonces.data as AnnonceVendeur[]);
+      }
+
+      setLoading(false);
+    }
+
+    chargerEspaceVendeur();
+  }, [router]);
+
+  async function handleSaveProfil(e: React.FormEvent) {
+    e.preventDefault();
+    if (!userId) return;
+
+    setSavingProfil(true);
+    setMsgProfil("");
+
+    const { error } = await supabase.from("utilisateurs").upsert([
+      {
+        id: userId,
+        nom: nom.trim() || "Vendeur DJASSA",
+        telephone: telephone.trim(),
+        commune,
+      },
+    ]);
+
+    if (error) {
+      setMsgProfil("Erreur : " + error.message);
+    } else {
+      setMsgProfil("✅ Vos informations vendeur ont été enregistrées.");
+    }
+    setSavingProfil(false);
+  }
+
+  async function toggleStatutAnnonce(id: string, statutActuel: string) {
+    const nouveauStatut = statutActuel === "active" ? "vendue" : "active";
+    const { error } = await supabase
+      .from("annonces")
+      .update({ statut: nouveauStatut })
+      .eq("id", id);
+
+    if (!error) {
+      setMesAnnonces((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, statut: nouveauStatut } : a))
+      );
+    }
+  }
+
+  async function supprimerAnnonce(id: string, titre: string) {
+    if (!confirm(`Supprimer définitivement l'annonce "${titre}" ?`)) return;
+    const { error } = await supabase.from("annonces").delete().eq("id", id);
+    if (!error) {
+      setMesAnnonces((prev) => prev.filter((a) => a.id !== id));
+    }
+  }
+
+  async function handleDeconnexion() {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
+        Chargement de votre espace vendeur...
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+      {/* En-tête */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
+            Mon espace vendeur DJASSA
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{emailUser}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/publier"
+            className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition"
+          >
+            + Nouvelle annonce
+          </Link>
+          <button
+            type="button"
+            onClick={handleDeconnexion}
+            className="border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition"
+          >
+            Déconnexion
+          </button>
+        </div>
+      </div>
+
+      {/* Formulaire Profil Vendeur */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-extrabold text-gray-900 mb-4">
+          Mes coordonnées par défaut
+        </h2>
+
+        <form onSubmit={handleSaveProfil} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Nom / Boutique
+              </label>
+              <input
+                type="text"
+                required
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Téléphone WhatsApp
+              </label>
+              <input
+                type="tel"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="07 00 00 00 00"
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Commune principale
+              </label>
+              <select
+                value={commune}
+                onChange={(e) => setCommune(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+              >
+                {COMMUNES_ABIDJAN.map((c: string) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {msgProfil && (
+            <p className="text-xs font-bold text-green-700">{msgProfil}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={savingProfil}
+            className="bg-gray-900 hover:bg-gray-800 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {savingProfil ? "Enregistrement..." : "Enregistrer mes infos"}
+          </button>
+        </form>
+      </div>
+
+      {/* Liste des annonces publiées par ce vendeur */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-extrabold text-gray-900 mb-4">
+          Mes annonces publiées ({mesAnnonces.length})
+        </h2>
+
+        {mesAnnonces.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-gray-600 mb-4">
+              Vous n&apos;avez encore publié aucun article sur DJASSA.
+            </p>
+            <Link
+              href="/publier"
+              className="inline-block bg-orange-600 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl hover:bg-orange-700 transition"
+            >
+              + Publier ma première annonce
+            </Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {mesAnnonces.map((ann) => (
+              <div
+                key={ann.id}
+                className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3.5">
+                  {ann.photos && ann.photos.length > 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ann.photos[0]}
+                      alt={ann.titre}
+                      className="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-400 shrink-0">
+                      Photo
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                          ann.statut === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {ann.statut === "active" ? "🟢 En ligne" : "✅ Vendu"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        📍 {ann.commune}
+                      </span>
+                    </div>
+
+                    <Link
+                      href={`/annonces/${ann.id}`}
+                      className="font-bold text-gray-900 text-sm hover:text-orange-600"
+                    >
+                      {ann.titre}
+                    </Link>
+                    <p className="text-orange-600 font-extrabold text-xs mt-0.5">
+                      {ann.prix > 0
+                        ? ann.prix.toLocaleString("fr-FR") + " FCFA"
+                        : "Prix à débattre"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleStatutAnnonce(ann.id, ann.statut)}
+                    className="text-xs font-bold px-3 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition"
+                  >
+                    {ann.statut === "active"
+                      ? "Marquer vendu"
+                      : "Remettre en ligne"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => supprimerAnnonce(ann.id, ann.titre)}
+                    className="text-xs font-bold text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

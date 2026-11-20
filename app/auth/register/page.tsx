@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { COMMUNES } from "@/lib/constantes";
+import { COMMUNES_ABIDJAN } from "@/lib/constantes";
 
 export default function RegisterDjassaPage() {
   const router = useRouter();
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [commune, setCommune] = useState("Cocody");
+  const [commune, setCommune] = useState("Treichville");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function RegisterDjassaPage() {
     setLoading(true);
     setErreur("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
@@ -39,66 +39,86 @@ export default function RegisterDjassaPage() {
       return;
     }
 
-    router.push("/mon-profil");
+    if (data.user) {
+      await supabase.from("utilisateurs").upsert([
+        {
+          id: data.user.id,
+          nom: nom.trim(),
+          telephone: telephone.trim(),
+          commune,
+        },
+      ]);
+    }
+
+    router.push("/mon-compte");
     router.refresh();
   }
 
   return (
     <div className="max-w-md mx-auto px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-        <h1 className="text-2xl font-bold text-gray-900 text-center mb-1">
-          Créer un compte DJASSA
-        </h1>
-        <p className="text-sm text-gray-600 text-center mb-6">
-          Publiez vos annonces et achetez en toute confiance à Abidjan.
-        </p>
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <div className="text-center mb-6">
+          <span className="bg-orange-100 text-orange-800 text-xs font-extrabold px-3 py-1 rounded-full">
+            GRATUIT • ABIDJAN
+          </span>
+          <h1 className="text-2xl font-black text-gray-900 mt-2">
+            Créer mon compte DJASSA
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+            Publiez vos annonces gratuitement et vendez vite près de chez vous.
+          </p>
+        </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Nom ou Boutique *
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Nom ou nom de boutique *
             </label>
             <input
               type="text"
               required
               value={nom}
               onChange={(e) => setNom(e.target.value)}
-              placeholder="Ex: Kouamé Boutique"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              placeholder="Ex: Koné Ibrahim ou Boutique Treichville"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Numéro WhatsApp *
-            </label>
-            <input
-              type="tel"
-              required
-              value={telephone}
-              onChange={(e) => setTelephone(e.target.value)}
-              placeholder="07 00 00 00 00"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Numéro WhatsApp *
+              </label>
+              <input
+                type="tel"
+                required
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="07 00 00 00 00"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Commune *
+              </label>
+              <select
+                value={commune}
+                onChange={(e) => setCommune(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm bg-white"
+              >
+                {COMMUNES_ABIDJAN.map((c: string) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Commune *</label>
-            <select
-              value={commune}
-              onChange={(e) => setCommune(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
-            >
-              {COMMUNES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-xs font-bold text-gray-700 mb-1">
               Adresse e-mail *
             </label>
             <input
@@ -107,12 +127,12 @@ export default function RegisterDjassaPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="vous@exemple.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-xs font-bold text-gray-700 mb-1">
               Mot de passe (6 caractères min.) *
             </label>
             <input
@@ -121,13 +141,13 @@ export default function RegisterDjassaPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              placeholder="Choisissez un mot de passe"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
 
           {erreur && (
-            <div className="text-red-600 text-xs bg-red-50 p-3 rounded-lg">
+            <div className="text-red-600 text-xs bg-red-50 border border-red-200 p-3 rounded-xl">
               {erreur}
             </div>
           )}
@@ -135,17 +155,17 @@ export default function RegisterDjassaPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold disabled:opacity-50 transition"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-50"
           >
             {loading ? "Création du compte..." : "Créer mon compte DJASSA"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-xs sm:text-sm text-gray-600 mt-6">
           Déjà inscrit ?{" "}
           <Link
-            href="/auth/login"
-            className="text-emerald-600 font-semibold hover:underline"
+            href="/connexion"
+            className="text-orange-600 font-bold hover:underline"
           >
             Se connecter
           </Link>
