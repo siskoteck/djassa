@@ -41,18 +41,37 @@ interface MessageContactAdmin {
   lu: boolean;
 }
 
+interface BanniereAdmin {
+  id: string;
+  created_at: string;
+  titre: string;
+  sous_titre: string | null;
+  image_url: string;
+  lien_url: string | null;
+  texte_bouton: string | null;
+  active: boolean;
+}
+
 export default function AdminDjassaPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [onglet, setOnglet] = useState<"annonces" | "vendeurs" | "messages">(
-    "annonces"
-  );
+  const [onglet, setOnglet] = useState<
+    "annonces" | "vendeurs" | "messages" | "bannieres"
+  >("annonces");
 
   const [annonces, setAnnonces] = useState<AnnonceAdmin[]>([]);
   const [vendeurs, setVendeurs] = useState<VendeurAdmin[]>([]);
   const [messages, setMessages] = useState<MessageContactAdmin[]>([]);
+  const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
   const [recherche, setRecherche] = useState("");
+
+  const [banTitre, setBanTitre] = useState("");
+  const [banSousTitre, setBanSousTitre] = useState("");
+  const [banLien, setBanLien] = useState("/annonces");
+  const [banTexteBtn, setBanTexteBtn] = useState("Découvrir");
+  const [banFichier, setBanFichier] = useState<File | null>(null);
+  const [banEnvoi, setBanEnvoi] = useState(false);
 
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
@@ -70,7 +89,7 @@ export default function AdminDjassaPage() {
 
       setAutorise(true);
 
-      const [resAnn, resVend, resMsg] = await Promise.all([
+      const [resAnn, resVend, resMsg, resBan] = await Promise.all([
         supabase
           .from("annonces")
           .select("id, created_at, titre, prix, commune, telephone, statut, booste")
@@ -83,11 +102,16 @@ export default function AdminDjassaPage() {
           .from("messages_contact")
           .select("*")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("bannieres")
+          .select("*")
+          .order("created_at", { ascending: false }),
       ]);
 
       if (resAnn.data) setAnnonces(resAnn.data as AnnonceAdmin[]);
       if (resVend.data) setVendeurs(resVend.data as VendeurAdmin[]);
       if (resMsg.data) setMessages(resMsg.data as MessageContactAdmin[]);
+      if (resBan.data) setBannieres(resBan.data as BanniereAdmin[]);
       setLoading(false);
     }
 
@@ -152,6 +176,82 @@ export default function AdminDjassaPage() {
       .eq("id", id);
     if (!error) {
       setMessages((prev) => prev.filter((m) => m.id !== id));
+    }
+  }
+  async function handleAjouterBanniere(e: React.FormEvent) {
+    e.preventDefault();
+    if (!banTitre.trim() || !banFichier) {
+      alert("Veuillez renseigner un titre et sélectionner une image.");
+      return;
+    }
+
+    setBanEnvoi(true);
+    try {
+      const ext = banFichier.name.split(".").pop() || "jpg";
+      const chemin = `ban_${Date.now()}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("bannieres-images")
+        .upload(chemin, banFichier, { upsert: true });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage
+        .from("bannieres-images")
+        .getPublicUrl(chemin);
+
+      const { data: nouvelleBan, error: insertErr } = await supabase
+        .from("bannieres")
+        .insert([
+          {
+            titre: banTitre.trim(),
+            sous_titre: banSousTitre.trim() || null,
+            image_url: urlData.publicUrl,
+            lien_url: banLien.trim() || "/annonces",
+            texte_bouton: banTexteBtn.trim() || "Découvrir",
+            active: true,
+          },
+        ])
+        .select("*")
+        .single();
+
+      if (insertErr) throw insertErr;
+
+      if (nouvelleBan) {
+        setBannieres((prev) => [nouvelleBan as BanniereAdmin, ...prev]);
+      }
+      setBanTitre("");
+      setBanSousTitre("");
+      setBanLien("/annonces");
+      setBanTexteBtn("Découvrir");
+      setBanFichier(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur upload bannière";
+      alert(msg);
+    } finally {
+      setBanEnvoi(false);
+    }
+  }
+
+  async function toggleBanniereActive(id: string, activeActuelle: boolean) {
+    const nouvelEtat = !activeActuelle;
+    const { error } = await supabase
+      .from("bannieres")
+      .update({ active: nouvelEtat })
+      .eq("id", id);
+
+    if (!error) {
+      setBannieres((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, active: nouvelEtat } : b))
+      );
+    }
+  }
+
+  async function supprimerBanniere(id: string) {
+    if (!confirm("Supprimer cette bannière ?")) return;
+    const { error } = await supabase.from("bannieres").delete().eq("id", id);
+    if (!error) {
+      setBannieres((prev) => prev.filter((b) => b.id !== id));
     }
   }
 
@@ -254,15 +354,6 @@ export default function AdminDjassaPage() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">
-            Annonces à la une
-          </p>
-          <p className="text-3xl font-black text-amber-600 mt-1">
-            {annonces.filter((a) => a.booste).length}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 uppercase">
             Vendeurs inscrits
           </p>
           <p className="text-3xl font-black text-gray-900 mt-1">
@@ -276,6 +367,15 @@ export default function AdminDjassaPage() {
           </p>
           <p className="text-3xl font-black text-emerald-700 mt-1">
             {messages.length}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 uppercase">
+            Bannières actives
+          </p>
+          <p className="text-3xl font-black text-amber-600 mt-1">
+            {bannieres.filter((b) => b.active).length}
           </p>
         </div>
       </div>
@@ -320,6 +420,18 @@ export default function AdminDjassaPage() {
               {nbMessagesNonLus}
             </span>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setOnglet("bannieres")}
+          className={`px-4 py-2.5 rounded-xl text-sm font-bold transition ${
+            onglet === "bannieres"
+              ? "bg-emerald-600 text-white"
+              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          🖼️ Bannières ({bannieres.length})
         </button>
       </div>
 
@@ -510,8 +622,160 @@ export default function AdminDjassaPage() {
           )}
         </div>
       )}
+      {onglet === "bannieres" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-base font-extrabold text-gray-900 mb-4">
+              ➕ Publier une nouvelle bannière sur l&apos;accueil DJASSA
+            </h2>
+            <form onSubmit={handleAjouterBanniere} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Titre principal de la bannière *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={banTitre}
+                    onChange={(e) => setBanTitre(e.target.value)}
+                    placeholder="Ex: Grande Promo Rentrée à Abidjan !"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm"
+                  />
+                </div>
 
-      {/* Changement de mot de passe administrateur avec vérification */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Sous-titre (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={banSousTitre}
+                    onChange={(e) => setBanSousTitre(e.target.value)}
+                    placeholder="Ex: Des milliers d'articles neufs et d'occasion à prix cassés"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Image de la bannière *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    required
+                                        onChange={(e) =>
+                      setBanFichier(e.target.files?.[0] ?? null)
+                    }
+
+                    className="block w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Lien de redirection
+                  </label>
+                  <input
+                    type="text"
+                    value={banLien}
+                    onChange={(e) => setBanLien(e.target.value)}
+                    placeholder="/annonces ou https://..."
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Texte du bouton
+                  </label>
+                  <input
+                    type="text"
+                    value={banTexteBtn}
+                    onChange={(e) => setBanTexteBtn(e.target.value)}
+                    placeholder="Ex: Voir les offres"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={banEnvoi}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+              >
+                {banEnvoi
+                  ? "Envoi de l'image..."
+                  : "🖼️ Publier la bannière"}
+              </button>
+            </form>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {bannieres.map((b) => (
+              <div
+                key={b.id}
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm flex flex-col"
+              >
+                <div className="h-36 bg-gray-900 relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={b.image_url}
+                    alt={b.titre}
+                    className="w-full h-full object-cover opacity-80"
+                  />
+                  <span
+                    className={`absolute top-2.5 left-2.5 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                      b.active
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    {b.active ? "🟢 Active sur l'accueil" : "⏸️ Masquée"}
+                  </span>
+                </div>
+
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-sm">
+                      {b.titre}
+                    </h3>
+                    {b.sous_titre && (
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        {b.sous_titre}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Lien : {b.lien_url || "/annonces"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => toggleBanniereActive(b.id, b.active)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-300 hover:bg-gray-50"
+                    >
+                      {b.active ? "Désactiver" : "Activer"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => supprimerBanniere(b.id)}
+                      className="text-xs font-bold text-red-600 px-3 py-1.5 rounded-xl hover:bg-red-50"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm max-w-2xl">
         <h2 className="text-base font-extrabold text-gray-900 mb-3">
           🔐 Sécurité du compte administrateur
