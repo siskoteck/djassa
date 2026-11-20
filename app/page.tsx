@@ -53,7 +53,6 @@ export default function HomeDjassaPage() {
 
     chargerAccueil();
   }, []);
-
   const annoncesFiltrees = annonces.filter((a) => {
     const matchRecherche =
       !recherche.trim() ||
@@ -73,7 +72,6 @@ export default function HomeDjassaPage() {
     if (!prix || prix <= 0) return "Prix à débattre";
     return prix.toLocaleString("fr-FR") + " FCFA";
   }
-
   return (
     <div>
       {/* Bannière principale + Barre de recherche */}
@@ -106,7 +104,7 @@ export default function HomeDjassaPage() {
               className="border border-gray-200 rounded-xl px-3.5 py-3 text-sm bg-white font-medium"
             >
               <option value="Toutes">Toutes les communes</option>
-              {COMMUNES_ABIDJAN.map((c) => (
+              {COMMUNES_ABIDJAN.map((c: string) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -127,7 +125,6 @@ export default function HomeDjassaPage() {
           </div>
         </div>
       </section>
-
       {/* Grille des catégories */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         <div className="flex items-center justify-between mb-4">
@@ -170,7 +167,6 @@ export default function HomeDjassaPage() {
           })}
         </div>
       </section>
-
       {/* Dernières annonces */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="flex items-center justify-between mb-6">
@@ -213,10 +209,10 @@ export default function HomeDjassaPage() {
                 className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-orange-300 transition flex flex-col"
               >
                 <div className="h-48 bg-gray-100 relative">
-                  {annonce.photos && annonce.photos.length > 0 ? (
+                  {Array.isArray(annonce.photos) && annonce.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={annonce.photos}
+                      src={String(annonce.photos)}
                       alt={annonce.titre}
                       className="w-full h-full object-cover"
                     />
