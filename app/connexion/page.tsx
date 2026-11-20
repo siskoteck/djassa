@@ -33,7 +33,6 @@ export default function ConnexionDjassaPage() {
     router.push("/mon-compte");
     router.refresh();
   }
-
   async function handleMotDePasseOublie() {
     setErreur("");
     setInfoReset("");
@@ -58,14 +57,18 @@ export default function ConnexionDjassaPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-14">
-      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+      <div className="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 shadow-sm">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-black text-gray-900">Connexion DJASSA</h1>
+          <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">
+            ESPACE VENDEUR & ACHETEUR
+          </span>
+          <h1 className="text-2xl font-black text-gray-900 mt-2">
+            Connexion <span className="text-emerald-600">DJASSA</span>
+          </h1>
           <p className="text-sm text-gray-600 mt-1">
             Accédez à votre boutique et gérez vos annonces à Abidjan.
           </p>
         </div>
-
         <form onSubmit={handleConnexion} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -77,7 +80,7 @@ export default function ConnexionDjassaPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="vous@exemple.com"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
 
@@ -89,7 +92,7 @@ export default function ConnexionDjassaPage() {
               <button
                 type="button"
                 onClick={handleMotDePasseOublie}
-                className="text-xs font-bold text-orange-600 hover:underline"
+                className="text-xs font-bold text-emerald-700 hover:underline"
               >
                 Mot de passe oublié ?
               </button>
@@ -100,10 +103,9 @@ export default function ConnexionDjassaPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Votre mot de passe"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+              className="w-full border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-4 py-2.5 text-sm"
             />
           </div>
-
           {erreur && (
             <div className="text-red-600 text-xs bg-red-50 border border-red-200 p-3 rounded-xl">
               {erreur}
@@ -111,7 +113,7 @@ export default function ConnexionDjassaPage() {
           )}
 
           {infoReset && (
-            <div className="text-green-700 text-xs bg-green-50 border border-green-200 p-3 rounded-xl font-semibold">
+            <div className="text-emerald-800 text-xs bg-emerald-50 border border-emerald-200 p-3 rounded-xl font-semibold">
               ✅ {infoReset}
             </div>
           )}
@@ -119,7 +121,7 @@ export default function ConnexionDjassaPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-50"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-50 shadow-sm"
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>
@@ -129,7 +131,7 @@ export default function ConnexionDjassaPage() {
           Pas encore de compte ?{" "}
           <Link
             href="/auth/register"
-            className="text-orange-600 font-bold hover:underline"
+            className="text-emerald-700 font-bold hover:underline"
           >
             Créer un compte gratuit
           </Link>
