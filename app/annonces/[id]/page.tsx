@@ -68,18 +68,28 @@ function ContenuDetailAnnonce() {
 
       setEstFavori(obtenirFavorisIds().includes(id));
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("annonces")
         .select("*, categories(nom, icone)")
         .eq("id", id)
         .maybeSingle();
+
+      // Repli automatique sans jointure si la relation categories n'est pas encore active
+      if (error) {
+        const resSimple = await supabase
+          .from("annonces")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        data = resSimple.data;
+        error = resSimple.error;
+      }
 
       if (!error && data) {
         const detail = data as AnnonceDetail;
         setAnnonce(detail);
         setNbVues(detail.vues || 0);
 
-        // Incrémente le compteur de vues 1 fois par session
         const cleVue = `djassa_vu_${detail.id}`;
         if (typeof window !== "undefined" && !sessionStorage.getItem(cleVue)) {
           sessionStorage.setItem(cleVue, "1");
@@ -260,14 +270,14 @@ function ContenuDetailAnnonce() {
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm aspect-[4/3] relative flex items-center justify-center">
             {photos.length > 0 ? (
               <a
-                href={String(photos[photoActive] || photos)}
+                href={String(photos[photoActive] || photos[0])}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-full block"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={String(photos[photoActive] || photos)}
+                  src={String(photos[photoActive] || photos[0])}
                   alt={annonce.titre}
                   className="w-full h-full object-contain bg-gray-900"
                 />
@@ -319,7 +329,6 @@ function ContenuDetailAnnonce() {
             </p>
           </div>
         </div>
-
         <div className="lg:col-span-5 space-y-5">
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -383,6 +392,7 @@ function ContenuDetailAnnonce() {
               </div>
             )}
           </div>
+
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <p className="text-xs font-bold uppercase text-gray-400 mb-2">
               Informations vendeur
@@ -442,7 +452,6 @@ function ContenuDetailAnnonce() {
           </div>
         </div>
       </div>
-
       {similaires.length > 0 && (
         <section className="mt-14 pt-10 border-t border-gray-200">
           <div className="flex items-center justify-between mb-6">
@@ -473,7 +482,7 @@ function ContenuDetailAnnonce() {
                   {Array.isArray(sim.photos) && sim.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(sim.photos)}
+                      src={String(sim.photos[0])}
                       alt={sim.titre}
                       className="w-full h-full object-cover"
                     />
