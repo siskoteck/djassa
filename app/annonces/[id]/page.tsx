@@ -19,6 +19,7 @@ interface AnnonceDetail {
   quartier: string | null;
   telephone: string | null;
   photos: string[];
+  video_url?: string | null;
   statut: string;
   vues?: number;
   categories?: {
@@ -47,7 +48,7 @@ function ContenuDetailAnnonce() {
   const params = useParams();
   const rawId = params?.id;
   const id = decodeURIComponent(
-    String(Array.isArray(rawId) ? rawId : rawId ?? "")
+    String(Array.isArray(rawId) ? rawId[0] : rawId ?? "")
   );
 
   const [annonce, setAnnonce] = useState<AnnonceDetail | null>(null);
@@ -59,6 +60,7 @@ function ContenuDetailAnnonce() {
   const [copieLien, setCopieLien] = useState(false);
   const [estFavori, setEstFavori] = useState(false);
   const [signale, setSignale] = useState(false);
+
   useEffect(() => {
     async function chargerAnnonce() {
       if (!id || id === "undefined" || id === "null") {
@@ -74,7 +76,6 @@ function ContenuDetailAnnonce() {
         .eq("id", id)
         .maybeSingle();
 
-      // Repli automatique sans jointure si la relation categories n'est pas encore active
       if (error) {
         const resSimple = await supabase
           .from("annonces")
@@ -319,6 +320,21 @@ function ContenuDetailAnnonce() {
             </div>
           )}
 
+          {annonce.video_url && (
+            <div className="bg-white rounded-3xl border border-emerald-200 p-5 shadow-sm mt-6">
+              <h2 className="text-base font-extrabold text-gray-900 mb-3 flex items-center gap-2">
+                <span>🎥</span> Vidéo de démonstration de l&apos;article
+              </h2>
+              <video
+                src={annonce.video_url}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full max-h-[420px] rounded-2xl bg-black"
+              />
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm mt-6">
             <h2 className="text-lg font-extrabold text-gray-900 mb-3">
               Description de l&apos;article
@@ -452,6 +468,7 @@ function ContenuDetailAnnonce() {
           </div>
         </div>
       </div>
+
       {similaires.length > 0 && (
         <section className="mt-14 pt-10 border-t border-gray-200">
           <div className="flex items-center justify-between mb-6">
