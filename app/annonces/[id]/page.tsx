@@ -53,6 +53,10 @@ function ContenuDetailAnnonce() {
 
   const [annonce, setAnnonce] = useState<AnnonceDetail | null>(null);
   const [vendeur, setVendeur] = useState<VendeurInfo | null>(null);
+  const [noteVendeur, setNoteVendeur] = useState<{
+    moyenne: string;
+    total: number;
+  } | null>(null);
   const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
   const [nbVues, setNbVues] = useState<number>(0);
   const [photoActive, setPhotoActive] = useState<number>(0);
@@ -110,6 +114,13 @@ function ContenuDetailAnnonce() {
               .maybeSingle()
           : Promise.resolve({ data: null });
 
+        const promesseNotes = detail.user_id
+          ? supabase
+              .from("avis_vendeurs")
+              .select("note")
+              .eq("vendeur_id", detail.user_id)
+          : Promise.resolve({ data: null });
+
         const promesseSimilaires = supabase
           .from("annonces")
           .select("id, titre, prix, etat, commune, quartier, photos, categorie_id")
@@ -123,13 +134,25 @@ function ContenuDetailAnnonce() {
           .order("created_at", { ascending: false })
           .limit(8);
 
-        const [resVendeur, resSim] = await Promise.all([
+        const [resVendeur, resNotes, resSim] = await Promise.all([
           promesseVendeur,
+          promesseNotes,
           promesseSimilaires,
         ]);
 
         if (resVendeur.data) {
           setVendeur(resVendeur.data as VendeurInfo);
+        }
+
+        if (resNotes.data && resNotes.data.length > 0) {
+          const somme = resNotes.data.reduce(
+            (acc, item) => acc + Number(item.note),
+            0
+          );
+          setNoteVendeur({
+            moyenne: (somme / resNotes.data.length).toFixed(1),
+            total: resNotes.data.length,
+          });
         }
 
         if (resSim.data) {
@@ -270,14 +293,14 @@ function ContenuDetailAnnonce() {
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm aspect-[4/3] relative flex items-center justify-center">
             {photos.length > 0 ? (
               <a
-                href={String(photos[photoActive] || photos[0])}
+                href={String(photos[photoActive] || photos)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-full block"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={String(photos[photoActive] || photos[0])}
+                  src={String(photos[photoActive] || photos)}
                   alt={annonce.titre}
                   className="w-full h-full object-contain bg-gray-900"
                 />
@@ -419,6 +442,11 @@ function ContenuDetailAnnonce() {
                 <p className="text-xs text-gray-500 mt-0.5">
                   Zone : {annonce.commune}
                 </p>
+                {noteVendeur && (
+                  <p className="text-xs font-extrabold text-amber-700 mt-1">
+                    ⭐ {noteVendeur.moyenne} / 5 ({noteVendeur.total} avis)
+                  </p>
+                )}
               </div>
               {vendeur?.verifie && (
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">
@@ -432,7 +460,7 @@ function ContenuDetailAnnonce() {
                 href={`/boutique/${annonce.user_id}`}
                 className="mt-4 block w-full text-center border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 font-bold text-xs py-2.5 rounded-xl transition"
               >
-                🏪 Voir toutes les annonces de ce vendeur →
+                🏪 Voir la boutique &amp; noter ce vendeur →
               </Link>
             )}
           </div>
@@ -496,7 +524,7 @@ function ContenuDetailAnnonce() {
                   {Array.isArray(sim.photos) && sim.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(sim.photos[0])}
+                      src={String(sim.photos)}
                       alt={sim.titre}
                       className="w-full h-full object-cover"
                     />
