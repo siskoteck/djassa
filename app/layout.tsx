@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavbarDjassa } from "@/components/NavbarDjassa";
 import { BoutonInstallerApp } from "@/components/BoutonInstallerApp";
+import { AssistantIADjassa } from "@/components/AssistantIADjassa";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,7 +21,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "DJASSA Abidjan — Petites annonces, bonnes affaires & achats en Côte d'Ivoire",
+  title:
+    "DJASSA Abidjan — Petites annonces, bonnes affaires & achats en Côte d'Ivoire",
   description:
     "Achetez et vendez rapidement téléphones, voitures, meubles, vêtements et immobilier à Abidjan (Treichville, Cocody, Yopougon, Marcory, Plateau...).",
   appleWebApp: {
@@ -43,6 +45,7 @@ export default function RootLayout({
         <NavbarDjassa />
         <main className="flex-1">{children}</main>
         <BoutonInstallerApp />
+        <AssistantIADjassa />
         <footer className="bg-gray-900 text-gray-400 text-xs py-8 mt-16">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-bold text-white">
