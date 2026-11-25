@@ -9,6 +9,7 @@ interface MessageChat {
 
 export function AssistantIADjassa() {
   const [ouvert, setOuvert] = useState(false);
+  const [cache, setCache] = useState(false);
   const [saisie, setSaisie] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [messages, setMessages] = useState<MessageChat[]>([
@@ -51,6 +52,23 @@ export function AssistantIADjassa() {
     }
   }
 
+  // État réduit : simple pastille discrète pour réafficher l'Assistant IA
+  if (cache) {
+    return (
+      <div className="fixed bottom-20 left-3 sm:bottom-6 sm:left-4 z-40">
+        <button
+          type="button"
+          onClick={() => setCache(false)}
+          title="Afficher l'Assistant IA DJASSA"
+          aria-label="Afficher l'Assistant IA DJASSA"
+          className="w-8 h-8 rounded-full bg-emerald-600/60 hover:bg-emerald-600/90 backdrop-blur-md border border-white/30 text-white text-xs flex items-center justify-center shadow-md transition"
+        >
+          ✨
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-20 left-4 sm:bottom-6 sm:left-6 z-40">
       {ouvert ? (
@@ -65,13 +83,27 @@ export function AssistantIADjassa() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setOuvert(false)}
-              className="text-white/80 hover:text-white text-sm font-bold px-2 py-1"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setOuvert(false)}
+                title="Réduire la fenêtre"
+                className="text-white/85 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/10"
+              >
+                —
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOuvert(false);
+                  setCache(true);
+                }}
+                title="Cacher l'Assistant IA"
+                className="text-white/85 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="p-4 h-72 overflow-y-auto space-y-3 bg-gray-50/60 text-xs">
@@ -115,13 +147,24 @@ export function AssistantIADjassa() {
           </form>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setOuvert(true)}
-          className="bg-emerald-600/75 hover:bg-emerald-600/95 backdrop-blur-md border border-white/30 text-white font-extrabold text-xs sm:text-sm px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition"
-        >
-          <span>✨</span> Assistant IA
-        </button>
+        <div className="inline-flex items-center bg-emerald-600/75 hover:bg-emerald-600/90 backdrop-blur-md border border-white/30 text-white rounded-full shadow-lg transition overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setOuvert(true)}
+            className="font-extrabold text-xs sm:text-sm pl-4 pr-2.5 py-3 flex items-center gap-2"
+          >
+            <span>✨</span> Assistant IA
+          </button>
+          <button
+            type="button"
+            onClick={() => setCache(true)}
+            title="Cacher la bulle Assistant IA"
+            aria-label="Cacher la bulle Assistant IA"
+            className="pr-3 pl-1.5 py-3 text-white/80 hover:text-white text-xs font-bold border-l border-white/20"
+          >
+            ✕
+          </button>
+        </div>
       )}
     </div>
   );
