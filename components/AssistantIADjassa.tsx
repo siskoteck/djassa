@@ -52,7 +52,7 @@ export function AssistantIADjassa() {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40">
+    <div className="fixed bottom-20 left-4 sm:bottom-6 sm:left-6 z-40">
       {ouvert ? (
         <div className="w-[330px] sm:w-[370px] bg-white rounded-3xl border border-emerald-200 shadow-2xl overflow-hidden flex flex-col">
           <div className="bg-emerald-600 text-white px-4 py-3.5 flex items-center justify-between">
