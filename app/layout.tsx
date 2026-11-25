@@ -1,10 +1,9 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavbarDjassa } from "@/components/NavbarDjassa";
 import { BoutonInstallerApp } from "@/components/BoutonInstallerApp";
-import { AssistantIADjassa } from "@/components/AssistantIADjassa";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +44,6 @@ export default function RootLayout({
         <NavbarDjassa />
         <main className="flex-1">{children}</main>
         <BoutonInstallerApp />
-        <AssistantIADjassa />
         <footer className="bg-gray-900 text-gray-400 text-xs py-8 mt-16">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-bold text-white">
