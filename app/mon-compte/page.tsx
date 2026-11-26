@@ -391,7 +391,7 @@ export default function MonCompteDjassaPage() {
                   {Array.isArray(ann.photos) && ann.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(ann.photos)}
+                      src={String(ann.photos[0])}
                       alt={ann.titre}
                       className="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0"
                     />

@@ -103,7 +103,7 @@ export default function FavorisDjassaPage() {
                 {Array.isArray(ann.photos) && ann.photos.length > 0 ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={String(ann.photos)}
+                    src={String(ann.photos[0])}
                     alt={ann.titre}
                     className="w-full h-full object-cover"
                   />

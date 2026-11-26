@@ -354,7 +354,7 @@ export default function MesAnnoncesPage() {
                       {Array.isArray(ann.photos) && ann.photos.length > 0 ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={String(ann.photos)}
+                          src={String(ann.photos[0])}
                           alt={ann.titre}
                           className="w-24 h-24 rounded-xl object-cover border border-gray-200 shrink-0"
                         />
