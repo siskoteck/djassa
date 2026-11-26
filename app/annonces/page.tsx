@@ -1,31 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { COMMUNES_ABIDJAN, ETATS_ARTICLE } from "@/lib/constantes";
-
-interface Categorie {
-  id: number;
-  nom: string;
-  icone: string | null;
-}
-
-interface AnnonceCatalogue {
-  id: string;
-  created_at: string;
-  titre: string;
-  prix: number;
-  etat: string;
-  commune: string;
-  quartier: string | null;
-  photos: string[];
-  categorie_id: number | null;
-  booste: boolean;
-}
+import { AnnonceCard } from "@/components/annonces/AnnonceCard";
+import { AnnonceSkeleton } from "@/components/annonces/AnnonceSkeleton";
+import { EmptyAnnonces } from "@/components/annonces/EmptyAnnonces";
+import type { Annonce, Categorie } from "@/lib/types";
 
 export default function CatalogueAnnoncesPage() {
-  const [annonces, setAnnonces] = useState<AnnonceCatalogue[]>([]);
+  const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,9 +19,7 @@ export default function CatalogueAnnoncesPage() {
   const [etatFiltre, setEtatFiltre] = useState("Tous");
   const [prixMin, setPrixMin] = useState("");
   const [prixMax, setPrixMax] = useState("");
-  const [tri, setTri] = useState<"recentes" | "prix_asc" | "prix_desc">(
-    "recentes"
-  );
+  const [tri, setTri] = useState<"recentes" | "prix_asc" | "prix_desc">("recentes");
 
   useEffect(() => {
     async function chargerCatalogue() {
@@ -51,85 +33,71 @@ export default function CatalogueAnnoncesPage() {
           .order("created_at", { ascending: false }),
       ]);
 
-      if (resCat.data) setCategories(resCat.data as Categorie[]);
-      if (resAnn.data) setAnnonces(resAnn.data as AnnonceCatalogue[]);
+      if (resCat.data) setCategories(resCat.data);
+      if (resAnn.data) setAnnonces(resAnn.data);
       setLoading(false);
     }
-
     chargerCatalogue();
   }, []);
-  function formaterPrixFCFA(prix: number) {
-    if (!prix || prix <= 0) return "Prix à débattre";
-    return prix.toLocaleString("fr-FR") + " FCFA";
-  }
 
-  const minNum = prixMin ? parseInt(prixMin.replace(/\D/g, ""), 10) : null;
-  const maxNum = prixMax ? parseInt(prixMax.replace(/\D/g, ""), 10) : null;
+  const annoncesFiltrees = useMemo(() => {
+    const minNum = prixMin ? parseInt(prixMin.replace(/\D/g, ""), 10) : null;
+    const maxNum = prixMax ? parseInt(prixMax.replace(/\D/g, ""), 10) : null;
 
-  const annoncesFiltrees = annonces
-    .filter((a) => {
-      const terme = recherche.trim().toLowerCase();
-      const matchRecherche =
-        !terme ||
-        a.titre.toLowerCase().includes(terme) ||
-        (a.quartier || "").toLowerCase().includes(terme);
+    return annonces
+      .filter((a) => {
+        const terme = recherche.trim().toLowerCase();
+        const matchRecherche =
+          !terme ||
+          a.titre.toLowerCase().includes(terme) ||
+          (a.quartier || "").toLowerCase().includes(terme);
 
-      const matchCommune =
-        commune === "Toutes" ||
-        a.commune.toLowerCase() === commune.toLowerCase();
+        const matchCommune =
+          commune === "Toutes" ||
+          a.commune.toLowerCase() === commune.toLowerCase();
 
-      const matchCategorie =
-        categorieId === "Toutes" || a.categorie_id === categorieId;
+        const matchCategorie =
+          categorieId === "Toutes" || a.categorie_id === categorieId;
 
-      const matchEtat = etatFiltre === "Tous" || a.etat === etatFiltre;
+        const matchEtat = etatFiltre === "Tous" || a.etat === etatFiltre;
+        const matchMin = minNum === null || a.prix >= minNum;
+        const matchMax = maxNum === null || a.prix <= maxNum;
 
-      const matchMin = minNum === null || a.prix >= minNum;
-      const matchMax = maxNum === null || a.prix <= maxNum;
+        return (
+          matchRecherche &&
+          matchCommune &&
+          matchCategorie &&
+          matchEtat &&
+          matchMin &&
+          matchMax
+        );
+      })
+      .sort((a, b) => {
+        if (tri === "prix_asc") {
+          if (a.prix === 0 && b.prix > 0) return 1;
+          if (b.prix === 0 && a.prix > 0) return -1;
+          return a.prix - b.prix;
+        }
+        if (tri === "prix_desc") return b.prix - a.prix;
+        if (a.booste !== b.booste) return a.booste ? -1 : 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+  }, [annonces, recherche, commune, categorieId, etatFiltre, prixMin, prixMax, tri]);
 
-      return (
-        matchRecherche &&
-        matchCommune &&
-        matchCategorie &&
-        matchEtat &&
-        matchMin &&
-        matchMax
-      );
-    })
-    .sort((a, b) => {
-      if (tri === "prix_asc") {
-        // Place les "Prix à débattre" (0) en fin de liste lors du tri croissant
-        if (a.prix === 0 && b.prix > 0) return 1;
-        if (b.prix === 0 && a.prix > 0) return -1;
-        return a.prix - b.prix;
-      }
-      if (tri === "prix_desc") {
-        return b.prix - a.prix;
-      }
-      // Tri par défaut : annonces boostées en tête puis plus récentes
-      if (a.booste !== b.booste) return a.booste ? -1 : 1;
-      return (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-    });
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* En-tête + Sélecteur de tri */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
             Toutes les annonces DJASSA
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            {annoncesFiltrees.length} bonne(s) affaire(s) disponible(s) à
-            Abidjan
+            {annoncesFiltrees.length} bonne(s) affaire(s) disponible(s) à Abidjan
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <label
-            htmlFor="tri-prix"
-            className="text-xs font-bold text-gray-600 shrink-0"
-          >
+          <label htmlFor="tri-prix" className="text-xs font-bold text-gray-600 shrink-0">
             Trier par :
           </label>
           <select
@@ -138,32 +106,29 @@ export default function CatalogueAnnoncesPage() {
             onChange={(e) =>
               setTri(e.target.value as "recentes" | "prix_asc" | "prix_desc")
             }
-            className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-white text-gray-800"
+            className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-white"
           >
             <option value="recentes">✨ Plus récentes</option>
-            <option value="prix_asc">💰 Prix : du moins cher au plus cher</option>
-            <option value="prix_desc">💎 Prix : du plus cher au moins cher</option>
+            <option value="prix_asc">💰 Prix croissant</option>
+            <option value="prix_desc">💎 Prix décroissant</option>
           </select>
         </div>
       </div>
 
-      {/* Barre de filtres complets */}
+      {/* Filtres */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm mb-8 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <input
             type="text"
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Mot-clé, quartier (Zone 3, Angré...)"
+            placeholder="Mot-clé, quartier..."
             className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2.5 text-sm"
           />
-
           <select
             value={categorieId}
             onChange={(e) =>
-              setCategorieId(
-                e.target.value === "Toutes" ? "Toutes" : Number(e.target.value)
-              )
+              setCategorieId(e.target.value === "Toutes" ? "Toutes" : Number(e.target.value))
             }
             className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2.5 text-sm bg-white"
           >
@@ -175,39 +140,31 @@ export default function CatalogueAnnoncesPage() {
               </option>
             ))}
           </select>
-
           <select
             value={commune}
             onChange={(e) => setCommune(e.target.value)}
             className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2.5 text-sm bg-white"
           >
             <option value="Toutes">Toutes les communes</option>
-            {COMMUNES_ABIDJAN.map((c: string) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+            {COMMUNES_ABIDJAN.map((c) => (
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
-
           <select
             value={etatFiltre}
             onChange={(e) => setEtatFiltre(e.target.value)}
             className="border border-gray-300 focus:border-emerald-600 focus:outline-none rounded-xl px-3.5 py-2.5 text-sm bg-white"
           >
             <option value="Tous">Tous les états</option>
-            {ETATS_ARTICLE.map((item: string) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
+            {ETATS_ARTICLE.map((item) => (
+              <option key={item} value={item}>{item}</option>
             ))}
           </select>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-600">
-              Budget (FCFA) :
-            </span>
+            <span className="text-xs font-bold text-gray-600">Budget (FCFA) :</span>
             <input
               type="number"
               min={0}
@@ -226,7 +183,6 @@ export default function CatalogueAnnoncesPage() {
               className="w-28 border border-gray-300 rounded-xl px-3 py-1.5 text-xs"
             />
           </div>
-
           <button
             type="button"
             onClick={() => {
@@ -244,74 +200,22 @@ export default function CatalogueAnnoncesPage() {
           </button>
         </div>
       </div>
+
       {loading ? (
-        <div className="text-center py-16 text-gray-500">
-          Chargement du catalogue DJASSA...
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <AnnonceSkeleton key={i} />
+          ))}
         </div>
       ) : annoncesFiltrees.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center">
-          <p className="text-lg font-bold text-gray-900 mb-2">
-            Aucune annonce ne correspond à vos critères
-          </p>
-          <p className="text-sm text-gray-600 mb-6">
-            Élargissez votre budget ou sélectionnez « Toutes les communes ».
-          </p>
-          <Link
-            href="/publier"
-            className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition"
-          >
-            + Publier une annonce gratuite
-          </Link>
-        </div>
+        <EmptyAnnonces
+          message="Aucune annonce ne correspond à vos critères"
+          sousMessage="Élargissez votre budget ou sélectionnez « Toutes les communes »."
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {annoncesFiltrees.map((annonce) => (
-            <Link
-              key={annonce.id}
-              href={`/annonces/${annonce.id}`}
-              className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-emerald-400 transition flex flex-col"
-            >
-              <div className="h-48 bg-gray-100 relative">
-                {Array.isArray(annonce.photos) && annonce.photos.length > 0 ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={String(annonce.photos)}
-                    alt={annonce.titre}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-medium">
-                    Aucune photo
-                  </div>
-                )}
-
-                {annonce.booste && (
-                  <span className="absolute top-2.5 right-2.5 bg-amber-400 text-amber-950 text-[10px] font-black px-2.5 py-1 rounded-full shadow-sm">
-                    ⭐ À LA UNE
-                  </span>
-                )}
-
-                <span className="absolute top-2.5 left-2.5 bg-white/95 text-gray-800 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                  {annonce.etat}
-                </span>
-              </div>
-
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <p className="text-emerald-700 font-black text-lg">
-                    {formaterPrixFCFA(annonce.prix)}
-                  </p>
-                  <h2 className="font-bold text-gray-900 text-sm mt-1 line-clamp-2">
-                    {annonce.titre}
-                  </h2>
-                </div>
-
-                <p className="text-xs text-gray-500 mt-3 pt-2.5 border-t border-gray-100">
-                  📍 {annonce.commune}
-                  {annonce.quartier ? ` (${annonce.quartier})` : ""}
-                </p>
-              </div>
-            </Link>
+            <AnnonceCard key={annonce.id} annonce={annonce} />
           ))}
         </div>
       )}
