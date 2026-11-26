@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { COMMUNES_ABIDJAN } from "@/lib/constantes";
+import { formaterPrixFCFA } from "@/lib/utils";
+import { ProfilVendeurForm } from "@/components/compte/ProfilVendeurForm";
+import { SecuriteCompteVendeur } from "@/components/compte/SecuriteCompteVendeur";
 
 interface AnnonceVendeur {
   id: string;
@@ -23,19 +25,8 @@ export default function MonCompteDjassaPage() {
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [commune, setCommune] = useState("Treichville");
-
   const [mesAnnonces, setMesAnnonces] = useState<AnnonceVendeur[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingProfil, setSavingProfil] = useState(false);
-  const [msgProfil, setMsgProfil] = useState("");
-
-  // Changement de mot de passe vendeur avec vérification de l'ancien
-  const [ancienMdp, setAncienMdp] = useState("");
-  const [nouveauMdp, setNouveauMdp] = useState("");
-  const [verifMdpEnCours, setVerifMdpEnCours] = useState(false);
-  const [msgMdp, setMsgMdp] = useState("");
-
-  const [suppressionCompteEnCours, setSuppressionCompteEnCours] = useState(false);
 
   useEffect(() => {
     async function chargerEspaceVendeur() {
@@ -52,11 +43,7 @@ export default function MonCompteDjassaPage() {
       setEmailUser(emailActuel);
 
       const [resProfil, resAnnonces] = await Promise.all([
-        supabase
-          .from("utilisateurs")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle(),
+        supabase.from("utilisateurs").select("*").eq("id", user.id).maybeSingle(),
         supabase
           .from("annonces")
           .select("id, created_at, titre, prix, commune, statut, photos")
@@ -68,13 +55,6 @@ export default function MonCompteDjassaPage() {
         setNom(resProfil.data.nom || "");
         setTelephone(resProfil.data.telephone || "");
         setCommune(resProfil.data.commune || "Treichville");
-
-        if (!resProfil.data.email && emailActuel) {
-          await supabase
-            .from("utilisateurs")
-            .update({ email: emailActuel })
-            .eq("id", user.id);
-        }
       } else {
         setNom(user.user_metadata?.nom || "");
         setTelephone(user.user_metadata?.telephone || "");
@@ -84,75 +64,11 @@ export default function MonCompteDjassaPage() {
       if (resAnnonces.data) {
         setMesAnnonces(resAnnonces.data as AnnonceVendeur[]);
       }
-
       setLoading(false);
     }
 
     chargerEspaceVendeur();
   }, [router]);
-  async function handleSaveProfil(e: React.FormEvent) {
-    e.preventDefault();
-    if (!userId) return;
-
-    setSavingProfil(true);
-    setMsgProfil("");
-
-    const { error } = await supabase.from("utilisateurs").upsert([
-      {
-        id: userId,
-        nom: nom.trim() || "Vendeur DJASSA",
-        telephone: telephone.trim(),
-        email: emailUser.trim().toLowerCase(),
-        commune,
-      },
-    ]);
-
-    if (error) {
-      setMsgProfil("Erreur : " + error.message);
-    } else {
-      setMsgProfil(
-        "✅ Vos informations vendeur ont été enregistrées (connexion par téléphone activée)."
-      );
-    }
-    setSavingProfil(false);
-  }
-
-  async function handleChangerMdpVendeur(e: React.FormEvent) {
-    e.preventDefault();
-    setMsgMdp("");
-
-    if (!ancienMdp) {
-      setMsgMdp("❌ Veuillez saisir votre ancien mot de passe.");
-      return;
-    }
-    if (nouveauMdp.length < 6) {
-      setMsgMdp("❌ Le nouveau mot de passe doit contenir 6 caractères minimum.");
-      return;
-    }
-
-    setVerifMdpEnCours(true);
-
-    const { error: checkError } = await supabase.auth.signInWithPassword({
-      email: emailUser,
-      password: ancienMdp,
-    });
-
-    if (checkError) {
-      setMsgMdp("❌ L'ancien mot de passe est incorrect.");
-      setVerifMdpEnCours(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: nouveauMdp });
-    if (error) {
-      setMsgMdp("❌ Erreur : " + error.message);
-    } else {
-      setMsgMdp("✅ Votre mot de passe a été modifié avec succès !");
-      setAncienMdp("");
-      setNouveauMdp("");
-    }
-    setVerifMdpEnCours(false);
-  }
 
   async function toggleStatutAnnonce(id: string, statutActuel: string) {
     const nouveauStatut = statutActuel === "active" ? "vendue" : "active";
@@ -182,39 +98,12 @@ export default function MonCompteDjassaPage() {
     router.refresh();
   }
 
-  async function handleSupprimerMonCompte() {
-    const confirmation1 = confirm(
-      "⚠️ ATTENTION : Voulez-vous vraiment supprimer définitivement votre compte DJASSA ainsi que toutes vos annonces ?"
-    );
-    if (!confirmation1) return;
-
-    const saisie = prompt(
-      'Pour confirmer la suppression définitive, tapez SUPPRIMER en majuscules :'
-    );
-    if (saisie !== "SUPPRIMER") {
-      alert("Suppression annulée.");
-      return;
-    }
-
-    setSuppressionCompteEnCours(true);
-
-    const { error } = await supabase.rpc("supprimer_mon_compte");
-
-    if (error) {
-      alert("Erreur lors de la suppression du compte : " + error.message);
-      setSuppressionCompteEnCours(false);
-      return;
-    }
-
-    await supabase.auth.signOut();
-    alert("Votre compte DJASSA et toutes vos annonces ont été supprimés.");
-    router.push("/");
-    router.refresh();
-  }
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
-        Chargement de votre espace vendeur...
+      <div className="max-w-5xl mx-auto px-4 py-10 space-y-6 animate-pulse">
+        <div className="h-10 bg-gray-200 rounded-xl w-1/3" />
+        <div className="h-44 bg-gray-100 rounded-3xl" />
+        <div className="h-56 bg-gray-100 rounded-3xl" />
       </div>
     );
   }
@@ -246,115 +135,16 @@ export default function MonCompteDjassaPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-extrabold text-gray-900 mb-4">
-          Mes coordonnées par défaut
-        </h2>
+      {userId && (
+        <ProfilVendeurForm
+          userId={userId}
+          emailUser={emailUser}
+          nomInitial={nom}
+          telephoneInitial={telephone}
+          communeInitiale={commune}
+        />
+      )}
 
-        <form onSubmit={handleSaveProfil} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Nom / Boutique
-              </label>
-              <input
-                type="text"
-                required
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Téléphone WhatsApp
-              </label>
-              <input
-                type="tel"
-                value={telephone}
-                onChange={(e) => setTelephone(e.target.value)}
-                placeholder="07 00 00 00 00"
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Commune principale
-              </label>
-              <select
-                value={commune}
-                onChange={(e) => setCommune(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
-              >
-                {COMMUNES_ABIDJAN.map((c: string) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {msgProfil && (
-            <p className="text-xs font-bold text-emerald-700">{msgProfil}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={savingProfil}
-            className="bg-gray-900 hover:bg-gray-800 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
-          >
-            {savingProfil ? "Enregistrement..." : "Enregistrer mes infos"}
-          </button>
-        </form>
-      </div>
-
-      {/* Modification du mot de passe avec vérification de l'ancien */}
-      <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-extrabold text-gray-900 mb-3">
-          🔐 Modifier mon mot de passe
-        </h2>
-        <form
-          onSubmit={handleChangerMdpVendeur}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-        >
-          <input
-            type="password"
-            required
-            value={ancienMdp}
-            onChange={(e) => setAncienMdp(e.target.value)}
-            placeholder="Ancien mot de passe *"
-            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
-          />
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={nouveauMdp}
-            onChange={(e) => setNouveauMdp(e.target.value)}
-            placeholder="Nouveau mot de passe *"
-            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={verifMdpEnCours}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition disabled:opacity-50"
-          >
-            {verifMdpEnCours ? "Vérification..." : "Mettre à jour"}
-          </button>
-        </form>
-        {msgMdp && (
-          <p
-            className={`text-xs font-bold mt-2 ${
-              msgMdp.startsWith("✅") ? "text-emerald-700" : "text-red-600"
-            }`}
-          >
-            {msgMdp}
-          </p>
-        )}
-      </div>
       <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-extrabold text-gray-900">
@@ -369,64 +159,54 @@ export default function MonCompteDjassaPage() {
         </div>
 
         {mesAnnonces.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-gray-600 mb-4">
-              Vous n&apos;avez encore publié aucun article sur DJASSA.
-            </p>
-            <Link
-              href="/publier"
-              className="inline-block bg-emerald-600 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition"
-            >
-              + Publier ma première annonce
-            </Link>
-          </div>
+          <p className="text-sm text-gray-500 py-4">
+            Vous n&apos;avez pas encore publié d&apos;annonce.
+          </p>
         ) : (
           <div className="divide-y divide-gray-100">
             {mesAnnonces.map((ann) => (
               <div
                 key={ann.id}
-                className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3 min-w-0">
                   {Array.isArray(ann.photos) && ann.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(ann.photos[0])}
+                      src={String(ann.photos)}
                       alt={ann.titre}
-                      className="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0"
+                      className="w-14 h-14 rounded-xl object-cover border border-gray-200 shrink-0"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-400 shrink-0">
-                      Photo
+                    <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-[10px] text-gray-400 shrink-0">
+                      Sans photo
                     </div>
                   )}
 
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
                       <span
-                        className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                           ann.statut === "active"
                             ? "bg-emerald-100 text-emerald-800"
                             : "bg-gray-200 text-gray-700"
                         }`}
                       >
-                        {ann.statut === "active" ? "🟢 En ligne" : "✅ Vendu"}
+                        {ann.statut === "active" ? "En ligne" : "Vendu"}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-[11px] text-gray-500">
                         📍 {ann.commune}
                       </span>
                     </div>
 
                     <Link
                       href={`/annonces/${ann.id}`}
-                      className="font-bold text-gray-900 text-sm hover:text-emerald-700"
+                      className="font-bold text-gray-900 text-sm hover:text-emerald-700 truncate block"
                     >
                       {ann.titre}
                     </Link>
                     <p className="text-emerald-700 font-extrabold text-xs mt-0.5">
-                      {ann.prix > 0
-                        ? ann.prix.toLocaleString("fr-FR") + " FCFA"
-                        : "Prix à débattre"}
+                      {formaterPrixFCFA(ann.prix)}
                     </p>
                   </div>
                 </div>
@@ -455,26 +235,7 @@ export default function MonCompteDjassaPage() {
         )}
       </div>
 
-      {/* Zone de danger : Suppression définitive du compte */}
-      <div className="bg-red-50/70 rounded-3xl border border-red-200 p-6">
-        <h2 className="text-base font-extrabold text-red-900">
-          ⚠️ Zone de danger — Supprimer mon compte
-        </h2>
-        <p className="text-xs sm:text-sm text-red-800 mt-1 mb-4">
-          La suppression de votre compte est irréversible. Toutes vos annonces
-          publiées et vos informations de profil seront définitivement effacées.
-        </p>
-        <button
-          type="button"
-          onClick={handleSupprimerMonCompte}
-          disabled={suppressionCompteEnCours}
-          className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
-        >
-          {suppressionCompteEnCours
-            ? "Suppression définitive en cours..."
-            : "🗑️ Supprimer définitivement mon compte"}
-        </button>
-      </div>
+      <SecuriteCompteVendeur emailUser={emailUser} />
     </div>
   );
 }
