@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -115,7 +115,6 @@ export default function CatalogueAnnoncesPage() {
         </div>
       </div>
 
-      {/* Filtres */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm mb-8 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <input

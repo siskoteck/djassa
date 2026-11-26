@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { COMMUNES_ABIDJAN } from "@/lib/constantes";
 import { AnnonceCard } from "@/components/annonces/AnnonceCard";
 import { AnnonceSkeleton } from "@/components/annonces/AnnonceSkeleton";
 import { EmptyAnnonces } from "@/components/annonces/EmptyAnnonces";
@@ -49,7 +48,8 @@ export default function HomeDjassaPage() {
         (a.quartier || "").toLowerCase().includes(q);
 
       const matchCommune =
-        commune === "Toutes" || a.commune.toLowerCase() === commune.toLowerCase();
+        commune === "Toutes" ||
+        a.commune.toLowerCase() === commune.toLowerCase();
 
       const matchCategorie =
         categorieId === "Toutes" || a.categorie_id === categorieId;
@@ -60,7 +60,6 @@ export default function HomeDjassaPage() {
 
   return (
     <div>
-      {/* Hero */}
       <section className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white py-12 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <span className="inline-block bg-white/20 text-xs font-extrabold px-3 py-1 rounded-full mb-3">
@@ -88,7 +87,6 @@ export default function HomeDjassaPage() {
         </div>
       </section>
 
-      {/* Catégories */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         <CategoriesGrid
           categories={categories}
@@ -97,7 +95,6 @@ export default function HomeDjassaPage() {
         />
       </section>
 
-      {/* Annonces */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pb-16">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">

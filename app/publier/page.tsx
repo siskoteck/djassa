@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,6 @@ export default function PublierAnnonceDjassaPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Categorie[]>([]);
 
-  // Champs du formulaire
   const [titre, setTitre] = useState("");
   const [categorieId, setCategorieId] = useState<string>("");
   const [prix, setPrix] = useState("");
@@ -21,17 +20,14 @@ export default function PublierAnnonceDjassaPage() {
   const [telephone, setTelephone] = useState("");
   const [description, setDescription] = useState("");
 
-  // Médias
   const [fichiersPhotos, setFichiersPhotos] = useState<File[]>([]);
   const [apercusPhotos, setApercusPhotos] = useState<string[]>([]);
   const [videoFichier, setVideoFichier] = useState<File | null>(null);
   const [videoApercu, setVideoApercu] = useState<string>("");
 
-  // États UI
   const [publicationEnCours, setPublicationEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
 
-  // Initialisation
   useEffect(() => {
     async function initPublication() {
       const { data } = await supabase.auth.getSession();
@@ -69,7 +65,6 @@ export default function PublierAnnonceDjassaPage() {
     initPublication();
   }, [router]);
 
-  // Gestion photos
   function handleSelectionPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const selectionnes = Array.from(e.target.files || []);
     if (selectionnes.length === 0) return;
@@ -95,7 +90,6 @@ export default function PublierAnnonceDjassaPage() {
     setApercusPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // Gestion vidéo
   function handleSelectionVideo(e: React.ChangeEvent<HTMLInputElement>) {
     const fichier = e.target.files?.[0];
     if (!fichier) return;
@@ -117,7 +111,6 @@ export default function PublierAnnonceDjassaPage() {
     setVideoApercu("");
   }
 
-  // Publication
   async function handlePublier(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
@@ -136,7 +129,6 @@ export default function PublierAnnonceDjassaPage() {
     setErreur("");
 
     try {
-      // Upload photos
       const urlsPhotos: string[] = [];
       for (let i = 0; i < fichiersPhotos.length; i++) {
         const fichier = fichiersPhotos[i];
@@ -156,7 +148,6 @@ export default function PublierAnnonceDjassaPage() {
         urlsPhotos.push(urlData.publicUrl);
       }
 
-      // Upload vidéo (optionnel)
       let videoUrlFinale: string | null = null;
       if (videoFichier) {
         const extVid = videoFichier.name.split(".").pop() || "mp4";
@@ -227,7 +218,6 @@ export default function PublierAnnonceDjassaPage() {
         </p>
 
         <form onSubmit={handlePublier} className="space-y-6">
-          {/* Photos */}
           <div className="bg-gray-50 border border-dashed border-gray-300 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-extrabold text-gray-900">
@@ -276,7 +266,6 @@ export default function PublierAnnonceDjassaPage() {
             )}
           </div>
 
-          {/* Vidéo */}
           <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-extrabold text-gray-900">
@@ -309,7 +298,6 @@ export default function PublierAnnonceDjassaPage() {
             )}
           </div>
 
-          {/* Titre */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-1.5">
               Titre de l&apos;annonce *
@@ -324,7 +312,6 @@ export default function PublierAnnonceDjassaPage() {
             />
           </div>
 
-          {/* Catégorie + Prix + État */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5">
@@ -376,7 +363,6 @@ export default function PublierAnnonceDjassaPage() {
             </div>
           </div>
 
-          {/* Localisation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5">
@@ -409,7 +395,6 @@ export default function PublierAnnonceDjassaPage() {
             </div>
           </div>
 
-          {/* Téléphone */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-1.5">
               Numéro WhatsApp / Téléphone *
@@ -424,7 +409,6 @@ export default function PublierAnnonceDjassaPage() {
             />
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-1.5">
               Description (optionnel)
@@ -438,14 +422,12 @@ export default function PublierAnnonceDjassaPage() {
             />
           </div>
 
-          {/* Erreur */}
           {erreur && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-3 rounded-xl">
               {erreur}
             </div>
           )}
 
-          {/* Bouton */}
           <button
             type="submit"
             disabled={publicationEnCours}
