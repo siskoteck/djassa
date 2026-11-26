@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
@@ -26,7 +26,7 @@ export default function HomeDjassaPage() {
         supabase
           .from("annonces")
           .select("*")
-          .eq("statut", "active")
+          .or("statut.eq.active,statut.is.null")
           .order("booste", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(24),

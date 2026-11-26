@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -28,7 +28,7 @@ export default function CatalogueAnnoncesPage() {
         supabase
           .from("annonces")
           .select("*")
-          .eq("statut", "active")
+          .or("statut.eq.active,statut.is.null")
           .order("booste", { ascending: false })
           .order("created_at", { ascending: false }),
       ]);
