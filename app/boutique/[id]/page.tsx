@@ -238,7 +238,7 @@ function ContenuBoutiqueVendeur() {
                   {Array.isArray(art.photos) && art.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(art.photos)}
+                      src={String(art.photos[0])}
                       alt={art.titre}
                       className="w-full h-full object-cover"
                     />

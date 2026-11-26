@@ -524,7 +524,7 @@ function ContenuDetailAnnonce() {
                   {Array.isArray(sim.photos) && sim.photos.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={String(sim.photos)}
+                      src={String(sim.photos[0])}
                       alt={sim.titre}
                       className="w-full h-full object-cover"
                     />
