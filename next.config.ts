@@ -1,11 +1,14 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  experimental: {
-    instantInsights: {
-      validationLevel: "manual-warning",
-    },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "znmastaqdaplodjspmgr.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
 };
 
