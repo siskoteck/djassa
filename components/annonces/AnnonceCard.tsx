@@ -24,6 +24,7 @@ function formaterDateRelative(dateIso: string): string {
 export function AnnonceCard({ annonce }: { annonce: Annonce }) {
   const photos = Array.isArray(annonce.photos) ? annonce.photos : [];
   const photoPrincipale = photos[0] || null;
+  const [animeCoeur, setAnimeCoeur] = useState(false);
   const [estFavori, setEstFavori] = useState<boolean>(() =>
     typeof window !== "undefined"
       ? obtenirFavorisIds().includes(annonce.id)
@@ -38,10 +39,12 @@ export function AnnonceCard({ annonce }: { annonce: Annonce }) {
     e.stopPropagation();
     const maj = basculerFavoriId(annonce.id);
     setEstFavori(maj.includes(annonce.id));
+    setAnimeCoeur(true);
+    setTimeout(() => setAnimeCoeur(false), 380);
   }
 
   return (
-    <div className="group bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 hover:border-emerald-500 transition-all duration-200 flex flex-col relative">
+    <div className="animate-djassa-fade-up group bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 hover:border-emerald-500 transition-all duration-200 flex flex-col relative">
       {/* Bouton Favori 1-clic */}
       <button
         type="button"
@@ -50,7 +53,7 @@ export function AnnonceCard({ annonce }: { annonce: Annonce }) {
         title={estFavori ? "Retirer des favoris" : "Sauvegarder"}
         className="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm flex items-center justify-center text-sm transition active:scale-90"
       >
-        {estFavori ? "❤️" : "🤍"}
+        <span className={animeCoeur ? "inline-block animate-djassa-heart" : "inline-block"}>{estFavori ? "❤️" : "🤍"}</span>
       </button>
 
       <Link href={`/annonces/${annonce.id}`} className="flex-1 flex flex-col">
@@ -73,7 +76,7 @@ export function AnnonceCard({ annonce }: { annonce: Annonce }) {
           {/* Badges haut-gauche */}
           <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 pr-9">
             {annonce.booste && (
-              <span className="bg-amber-400 text-gray-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
+              <span className="animate-djassa-glow bg-amber-400 text-gray-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
                 ⭐ À la une
               </span>
             )}

@@ -85,7 +85,7 @@ export default function HomeDjassaPage() {
     <div className="bg-gray-50/60">
       {/* Hero Abidjan */}
       <section className="bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-600 text-white pt-10 pb-12 px-4 relative overflow-hidden">
-        <div className="max-w-5xl mx-auto text-center relative z-10">
+        <div className="animate-djassa-fade-up max-w-5xl mx-auto text-center relative z-10">
           <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-xs border border-white/20 text-xs font-extrabold px-3.5 py-1 rounded-full mb-3">
             🇨🇮 LE GRAND MARCHÉ EN LIGNE D&apos;ABIDJAN
           </span>
@@ -246,7 +246,7 @@ export default function HomeDjassaPage() {
           </div>
           <Link
             href="/publier"
-            className="bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-sm px-6 py-3.5 rounded-2xl shadow-sm transition shrink-0"
+            className="animate-djassa-glow bg-amber-400 hover:bg-amber-300 hover:scale-105 active:scale-95 text-gray-950 font-black text-sm px-6 py-3.5 rounded-2xl shadow-sm transition shrink-0"
           >
             📸 Publier gratuitement
           </Link>
