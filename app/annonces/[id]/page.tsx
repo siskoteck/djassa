@@ -52,18 +52,28 @@ function ContenuDetailAnnonce() {
   );
 
   const [annonce, setAnnonce] = useState<AnnonceDetail | null>(null);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [vendeur, setVendeur] = useState<VendeurInfo | null>(null);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [noteVendeur, setNoteVendeur] = useState<{
     moyenne: string;
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
     total: number;
   } | null>(null);
   const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [nbVues, setNbVues] = useState<number>(0);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [photoActive, setPhotoActive] = useState<number>(0);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [copieLien, setCopieLien] = useState(false);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [estFavori, setEstFavori] = useState(false);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [signale, setSignale] = useState(false);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   useEffect(() => {
     async function chargerAnnonce() {
       if (!id || id === "undefined" || id === "null") {
