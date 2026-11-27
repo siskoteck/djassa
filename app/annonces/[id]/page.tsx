@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { genererLienWhatsApp8ChiffresDjassa } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
 import { basculerFavoriId, obtenirFavorisIds } from "@/lib/favoris";
 
@@ -193,7 +194,7 @@ function ContenuDetailAnnonce() {
     const texte = encodeURIComponent(
       `Bonjour, j'ai vu votre annonce "${titreAnnonce}" sur DJASSA Abidjan et je suis intéressé(e).\nLien : ${urlActuelle}`
     );
-    return `https://wa.me{chiffres}?text=${texte}`;
+    return "https://wa.me/" + chiffres;
   }
 
   function copierLienAnnonce() {

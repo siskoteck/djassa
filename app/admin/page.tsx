@@ -263,7 +263,7 @@ export default function AdminDjassaPage() {
     const texte = encodeURIComponent(
       `Bonjour ${nomClient}, ici l'équipe DJASSA Abidjan suite à votre message.`
     );
-    return `https://wa.me{chiffres}?text=${texte}`;
+    return "https://wa.me/" + chiffres;
   }
 
   async function handleChangerMdp(e: React.FormEvent) {
