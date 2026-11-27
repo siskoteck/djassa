@@ -555,6 +555,68 @@ function ContenuDetailAnnonce() {
           </div>
         </section>
       )}
+    
+      {/* Visionneuse plein écran (Lightbox) */}
+      {visionneuseOuverte && photos.length > 0 && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setVisionneuseOuverte(false)}
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+        >
+          <button
+            type="button"
+            onClick={() => setVisionneuseOuverte(false)}
+            aria-label="Fermer l'aperçu"
+            className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-xl font-black flex items-center justify-center transition"
+          >
+            ✕
+          </button>
+
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhotoActive((prev) => (prev - 1 + photos.length) % photos.length);
+                }}
+                aria-label="Photo précédente"
+                className="absolute left-3 sm:left-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-2xl font-black flex items-center justify-center transition"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhotoActive((prev) => (prev + 1) % photos.length);
+                }}
+                aria-label="Photo suivante"
+                className="absolute right-3 sm:right-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-2xl font-black flex items-center justify-center transition"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-5xl max-h-[88vh] flex flex-col items-center gap-3"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={String(photos[photoActive] || photos[0])}
+              alt={annonce.titre}
+              className="max-h-[78vh] max-w-full object-contain rounded-2xl shadow-2xl"
+            />
+            <span className="text-xs font-bold text-gray-200 bg-white/15 px-3.5 py-1 rounded-full">
+              Photo {photoActive + 1} / {photos.length} • Touchez à côté pour fermer
+            </span>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
