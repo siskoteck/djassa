@@ -132,7 +132,7 @@ export default function HomeDjassaPage() {
                 key={c}
                 type="button"
                 onClick={() => setCommune(c)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 ${
                   actif
                     ? "bg-emerald-700 text-white shadow-xs"
                     : "bg-white border border-gray-200 text-gray-700 hover:border-emerald-400 hover:text-emerald-700"

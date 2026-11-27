@@ -1,4 +1,4 @@
-﻿import { COMMUNES_ABIDJAN } from "@/lib/constantes";
+import { COMMUNES_ABIDJAN } from "@/lib/constantes";
 
 interface Props {
   recherche: string;

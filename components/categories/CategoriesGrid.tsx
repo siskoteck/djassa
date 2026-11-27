@@ -1,4 +1,4 @@
-﻿import type { Categorie } from "@/lib/types";
+import type { Categorie } from "@/lib/types";
 
 interface Props {
   categories: Categorie[];
@@ -18,7 +18,7 @@ export function CategoriesGrid({
           Explorer par catégorie
         </h2>
         {categorieId !== "Toutes" && (
-          <button
+          <button className="group transition-all duration-200 hover:-translate-y-1 active:scale-95"
             type="button"
             onClick={() => setCategorieId("Toutes")}
             className="text-xs font-bold text-emerald-700 hover:underline"
@@ -32,7 +32,7 @@ export function CategoriesGrid({
         {categories.map((cat) => {
           const estActive = categorieId === cat.id;
           return (
-            <button
+            <button className="group transition-all duration-200 hover:-translate-y-1 active:scale-95"
               key={cat.id}
               type="button"
               onClick={() => setCategorieId(estActive ? "Toutes" : cat.id)}
