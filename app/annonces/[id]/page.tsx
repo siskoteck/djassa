@@ -57,7 +57,6 @@ function ContenuDetailAnnonce() {
   const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
   const [noteVendeur, setNoteVendeur] = useState<{
     moyenne: string;
-  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
     total: number;
   } | null>(null);
   const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
