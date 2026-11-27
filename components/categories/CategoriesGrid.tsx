@@ -18,7 +18,7 @@ export function CategoriesGrid({
           Explorer par catégorie
         </h2>
         {categorieId !== "Toutes" && (
-          <button className="group transition-all duration-200 hover:-translate-y-1 active:scale-95"
+          <button
             type="button"
             onClick={() => setCategorieId("Toutes")}
             className="text-xs font-bold text-emerald-700 hover:underline"
@@ -32,11 +32,11 @@ export function CategoriesGrid({
         {categories.map((cat) => {
           const estActive = categorieId === cat.id;
           return (
-            <button className="group transition-all duration-200 hover:-translate-y-1 active:scale-95"
+            <button
               key={cat.id}
               type="button"
               onClick={() => setCategorieId(estActive ? "Toutes" : cat.id)}
-              className={`p-3.5 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
+              className={`p-3.5 rounded-2xl border transition-all duration-200 hover:-translate-y-1 active:scale-95 text-center transition flex flex-col items-center justify-center gap-1.5 ${
                 estActive
                   ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                   : "bg-white hover:border-emerald-400 text-gray-800 border-gray-200"
