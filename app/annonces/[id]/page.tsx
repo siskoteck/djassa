@@ -292,19 +292,15 @@ function ContenuDetailAnnonce() {
         <div className="lg:col-span-7 space-y-3">
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm aspect-[4/3] relative flex items-center justify-center">
             {photos.length > 0 ? (
-              <a
-                href={String(photos[photoActive] || photos)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-full block"
-              >
+              <button type="button" onClick={() => setVisionneuseOuverte(true)} title="Agrandir la photo" className="w-full h-full block cursor-zoom-in relative group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={String(photos[photoActive] || photos)}
                   alt={annonce.titre}
                   className="w-full h-full object-contain bg-gray-900"
                 />
-              </a>
+                  <span className="absolute top-3 right-3 bg-black/65 text-white text-[11px] font-bold px-2.5 py-1 rounded-full opacity-90 group-hover:scale-105 transition">🔍 Agrandir</span>
+                </button>
             ) : (
               <div className="text-gray-400 text-sm font-medium">
                 Aucune photo fournie par le vendeur
