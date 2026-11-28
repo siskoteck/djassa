@@ -59,6 +59,7 @@ function ContenuDetailAnnonce() {
     total: number;
   } | null>(null);
   const [similaires, setSimilaires] = useState<AnnonceSimilaire[]>([]);
+  const [lienCopie, setLienCopie] = useState(false);
   const [nbVues, setNbVues] = useState<number>(0);
   const [photoActive, setPhotoActive] = useState<number>(0);
   const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
