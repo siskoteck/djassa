@@ -43,10 +43,8 @@ export async function generateMetadata({
   const descPropre =
     data.description?.trim().slice(0, 155) ||
     `${data.titre} (${prixTxt}) disponible à ${data.commune || "Abidjan"} sur DJASSA.`;
-  const photoPrincipale =
-    Array.isArray(data.photos) && data.photos.length > 0 && data.photos
-      ? data.photos
-      : null;
+  const premierePhoto = Array.isArray(data.photos) ? data.photos.at(0) : undefined;
+  const photoPrincipale = typeof premierePhoto === "string" ? premierePhoto : null;
 
   return {
     metadataBase: new URL(SITE_URL),
