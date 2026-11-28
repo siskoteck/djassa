@@ -5,10 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_EMAIL = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAIL || "siskoteck@gmail.com"
-).toLowerCase();
-
 interface AnnonceAdmin {
   id: string;
   created_at: string;
@@ -82,8 +78,23 @@ export default function AdminDjassaPage() {
       const { data } = await supabase.auth.getSession();
       const user = data.session?.user;
 
-      if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
-        router.replace("/connexion");
+      if (!user) {
+        router.replace("/auth/login?redirect=/admin");
+        return;
+      }
+
+      let estAdmin = user.app_metadata?.role === "admin";
+      if (!estAdmin) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        estAdmin = roleRow?.role === "admin";
+      }
+
+      if (!estAdmin) {
+        router.replace("/");
         return;
       }
 

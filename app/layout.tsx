@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -71,6 +72,7 @@ export default function RootLayout({
             <p>© 2026 DJASSA. Tous droits réservés.</p>
           </div>
         </footer>
+              <Analytics />
       </body>
     </html>
   );
